@@ -49,7 +49,28 @@ export const CATEGORY_COLORS: Record<string, string> = {
   'Impossible Hide': 'text-red-400 bg-red-400/10',
 }
 
-export const MAPS = ['Map 1', 'Map 2', 'Map 3'] as const
+export const MAPS = [
+  'Hide-and-Seek Mansion',
+  'Sewer',
+  'Backrooms',
+  'Indoor Country',
+  'Penguin Hotel',
+  'Sugar Land',
+  'Osaka',
+  'Apartment',
+  'Art Gallery',
+  'Swimming Pool',
+  'Minecraft House',
+  'Minecraft',
+  'Simpsons Family House',
+  'CS2 Mirage',
+  'Meeting Room',
+  'Bikini Bottom',
+  'Minepops',
+  'Restaurant Building',
+  'Viking Dining',
+  'The Market',
+] as const
 export const DIFFICULTIES = ['Easy', 'Medium', 'Hard', 'Impossible'] as const
 export const CATEGORIES = [
   'Best Hide',

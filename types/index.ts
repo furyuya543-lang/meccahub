@@ -5,7 +5,27 @@ export type Category =
   | 'Funniest Hide'
   | 'Best Beginner Hide'
   | 'Impossible Hide'
-export type Map = 'Map 1' | 'Map 2' | 'Map 3'
+export type Map =
+  | 'Hide-and-Seek Mansion'
+  | 'Sewer'
+  | 'Backrooms'
+  | 'Indoor Country'
+  | 'Penguin Hotel'
+  | 'Sugar Land'
+  | 'Osaka'
+  | 'Apartment'
+  | 'Art Gallery'
+  | 'Swimming Pool'
+  | 'Minecraft House'
+  | 'Minecraft'
+  | 'Simpsons Family House'
+  | 'CS2 Mirage'
+  | 'Meeting Room'
+  | 'Bikini Bottom'
+  | 'Minepops'
+  | 'Restaurant Building'
+  | 'Viking Dining'
+  | 'The Market'
 
 export interface User {
   id: string
