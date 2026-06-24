@@ -1,7 +1,6 @@
 import { NextAuthOptions } from 'next-auth'
 import { createServiceClient } from './supabase'
 
-// Steam OpenID provider (custom)
 const STEAM_OPENID_URL = 'https://steamcommunity.com/openid'
 
 export const authOptions: NextAuthOptions = {
@@ -74,52 +73,94 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, profile }) {
-      const steamProfile = profile as { id?: string; steamId?: string; name?: string; image?: string; profileUrl?: string } | undefined
-      const steamId = steamProfile?.steamId || steamProfile?.id || user.id
+      const p = profile as { steamId?: string; id?: string; profileUrl?: string } | undefined
+      const steamId = p?.steamId || p?.id || user.id
       if (!steamId) return false
 
       try {
         const supabase = createServiceClient()
+
         const { data: existing } = await supabase
           .from('users')
           .select('id')
           .eq('steam_id', steamId)
           .single()
 
-        if (!existing) {
-          await supabase.from('users').insert({
-            steam_id: steamId,
-            username: user.name || 'Unknown',
-            avatar_url: user.image || '',
-            steam_profile_url: steamProfile?.profileUrl || '',
-            reputation: 0,
-          })
-        } else {
+        if (existing) {
           await supabase
             .from('users')
             .update({
               username: user.name || 'Unknown',
               avatar_url: user.image || '',
+              steam_profile_url: p?.profileUrl || '',
             })
             .eq('steam_id', steamId)
+        } else {
+          await supabase.from('users').insert({
+            steam_id: steamId,
+            username: user.name || 'Unknown',
+            avatar_url: user.image || '',
+            steam_profile_url: p?.profileUrl || '',
+            reputation: 0,
+            created_at: new Date().toISOString(),
+          })
         }
-      } catch {
-        return false
+      } catch (err) {
+        console.error('[auth] signIn DB error:', err)
       }
+
       return true
     },
+
     async jwt({ token, user, profile }) {
-      const steamProfile = profile as { steamId?: string; id?: string; profileUrl?: string } | undefined
-      if (user) {
-        token.steamId = steamProfile?.steamId || steamProfile?.id || user.id
-        token.profileUrl = steamProfile?.profileUrl || ''
+      // Only runs on initial sign-in when profile is present
+      if (profile) {
+        const p = profile as { steamId?: string; id?: string; profileUrl?: string }
+        const steamId = p.steamId || p.id || user?.id || ''
+
+        token.steamId = steamId
+        token.profileUrl = p.profileUrl || ''
+        token.username = user?.name || ''
+        token.avatar_url = user?.image || ''
+
+        if (steamId) {
+          try {
+            const supabase = createServiceClient()
+            const { data } = await supabase
+              .from('users')
+              .select('id, username, avatar_url, steam_profile_url')
+              .eq('steam_id', steamId)
+              .single()
+
+            if (data) {
+              token.supabaseUserId = data.id
+              token.username = data.username
+              token.avatar_url = data.avatar_url
+              token.profileUrl = data.steam_profile_url || token.profileUrl
+            }
+          } catch (err) {
+            console.error('[auth] jwt DB lookup error:', err)
+          }
+        }
       }
+
       return token
     },
+
     async session({ session, token }) {
       if (session.user) {
-        (session.user as typeof session.user & { steamId: string; profileUrl: string }).steamId = token.steamId as string
-        ;(session.user as typeof session.user & { steamId: string; profileUrl: string }).profileUrl = token.profileUrl as string
+        const u = session.user as typeof session.user & {
+          steamId: string
+          profileUrl: string
+          supabaseUserId: string
+          username: string
+          avatar_url: string
+        }
+        u.steamId = (token.steamId as string) || ''
+        u.profileUrl = (token.profileUrl as string) || ''
+        u.supabaseUserId = (token.supabaseUserId as string) || ''
+        u.username = (token.username as string) || session.user.name || ''
+        u.avatar_url = (token.avatar_url as string) || session.user.image || ''
       }
       return session
     },
