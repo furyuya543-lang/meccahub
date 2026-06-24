@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Hide } from '@/types'
-import { DIFFICULTY_COLORS, CATEGORY_COLORS, timeAgo } from '@/lib/utils'
+import { CATEGORY_COLORS, timeAgo } from '@/lib/utils'
 
 interface HideCardProps {
   hide: Hide
@@ -41,9 +41,6 @@ export function HideCard({ hide, rank }: HideCardProps) {
             {hide.title}
           </h3>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <span className={`badge text-xs ${DIFFICULTY_COLORS[hide.difficulty] || ''}`}>
-              {hide.difficulty}
-            </span>
             <span className={`badge text-xs ${CATEGORY_COLORS[hide.category] || ''}`}>
               {hide.category}
             </span>

@@ -34,13 +34,6 @@ export function cn(...classes: (string | undefined | false | null)[]): string {
   return classes.filter(Boolean).join(' ')
 }
 
-export const DIFFICULTY_COLORS: Record<string, string> = {
-  Easy: 'text-green-400 bg-green-400/10',
-  Medium: 'text-yellow-400 bg-yellow-400/10',
-  Hard: 'text-orange-400 bg-orange-400/10',
-  Impossible: 'text-red-400 bg-red-400/10',
-}
-
 export const CATEGORY_COLORS: Record<string, string> = {
   'Best Hide': 'text-purple-400 bg-purple-400/10',
   'Best Camouflage': 'text-blue-400 bg-blue-400/10',
@@ -71,7 +64,6 @@ export const MAPS = [
   'Viking Dining',
   'The Market',
 ] as const
-export const DIFFICULTIES = ['Easy', 'Medium', 'Hard', 'Impossible'] as const
 export const CATEGORIES = [
   'Best Hide',
   'Best Camouflage',

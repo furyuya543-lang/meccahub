@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { Hide, User } from '@/types'
-import { DIFFICULTY_COLORS, CATEGORY_COLORS, getCurrentWeek } from '@/lib/utils'
+import { CATEGORY_COLORS, getCurrentWeek } from '@/lib/utils'
 
 type Tab = 'weekly_hides' | 'alltime_hides' | 'weekly_players' | 'alltime_players'
 
@@ -158,7 +158,6 @@ export function RankingsClient() {
                       {hide.title}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className={`badge text-xs ${DIFFICULTY_COLORS[hide.difficulty]}`}>{hide.difficulty}</span>
                       <span className={`badge text-xs ${CATEGORY_COLORS[hide.category]}`}>{hide.category}</span>
                       {hide.users && <span className="text-xs text-gray-500">by {hide.users.username}</span>}
                     </div>

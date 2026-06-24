@@ -4,7 +4,7 @@ import { useState, useRef } from 'react'
 import { useSession, signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { MAPS, DIFFICULTIES, CATEGORIES } from '@/lib/utils'
+import { MAPS, CATEGORIES } from '@/lib/utils'
 
 export function SubmitForm() {
   const { data: session } = useSession()
@@ -15,7 +15,6 @@ export function SubmitForm() {
     title: '',
     description: '',
     map: '',
-    difficulty: '',
     category: '',
     video_url: '',
   })
@@ -63,7 +62,6 @@ export function SubmitForm() {
 
     if (!form.title.trim()) return setError('Title is required.')
     if (!form.map) return setError('Please select a map.')
-    if (!form.difficulty) return setError('Please select a difficulty.')
     if (!form.category) return setError('Please select a category.')
     if (!screenshot) return setError('A screenshot is required.')
 
@@ -97,7 +95,6 @@ export function SubmitForm() {
           title: form.title.trim(),
           description: form.description.trim(),
           map: form.map,
-          difficulty: form.difficulty,
           category: form.category,
           screenshot_url: publicUrl,
           video_url: form.video_url.trim() || null,
@@ -156,8 +153,8 @@ export function SubmitForm() {
           <p className="text-xs text-gray-600 mt-1 text-right">{form.description.length}/1000</p>
         </div>
 
-        {/* Map, Difficulty, Category */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Map, Category */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1.5">
               Map <span className="text-red-400">*</span>
@@ -165,15 +162,6 @@ export function SubmitForm() {
             <select value={form.map} onChange={(e) => set('map', e.target.value)} className="select">
               <option value="">Select map</option>
               {MAPS.map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">
-              Difficulty <span className="text-red-400">*</span>
-            </label>
-            <select value={form.difficulty} onChange={(e) => set('difficulty', e.target.value)} className="select">
-              <option value="">Select difficulty</option>
-              {DIFFICULTIES.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
           <div>

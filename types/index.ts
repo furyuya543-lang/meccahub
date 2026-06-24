@@ -1,4 +1,3 @@
-export type Difficulty = 'Easy' | 'Medium' | 'Hard' | 'Impossible'
 export type Category =
   | 'Best Hide'
   | 'Best Camouflage'
@@ -43,7 +42,6 @@ export interface Hide {
   title: string
   description: string
   map: Map
-  difficulty: Difficulty
   category: Category
   screenshot_url: string
   video_url?: string

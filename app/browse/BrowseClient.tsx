@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { HideCard } from '@/components/HideCard'
 import { Hide } from '@/types'
-import { MAPS, DIFFICULTIES, CATEGORIES } from '@/lib/utils'
+import { MAPS, CATEGORIES } from '@/lib/utils'
 
 type SortOption = 'votes_desc' | 'votes_asc' | 'newest' | 'oldest'
 
@@ -20,7 +20,6 @@ export function BrowseClient() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [map, setMap] = useState('')
-  const [difficulty, setDifficulty] = useState('')
   const [category, setCategory] = useState('')
   const [sort, setSort] = useState<SortOption>('votes_desc')
   const [page, setPage] = useState(0)
@@ -38,7 +37,6 @@ export function BrowseClient() {
 
     if (search) query = query.ilike('title', `%${search}%`)
     if (map) query = query.eq('map', map)
-    if (difficulty) query = query.eq('difficulty', difficulty)
     if (category) query = query.eq('category', category)
 
     if (sort === 'votes_desc') query = query.order('votes', { ascending: false })
@@ -58,12 +56,12 @@ export function BrowseClient() {
 
     setHasMore(items.length === PAGE_SIZE && (count ?? 0) > (currentPage + 1) * PAGE_SIZE)
     setLoading(false)
-  }, [search, map, difficulty, category, sort, page])
+  }, [search, map, category, sort, page])
 
   useEffect(() => {
     fetchHides(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, map, difficulty, category, sort])
+  }, [search, map, category, sort])
 
   const loadMore = () => {
     setPage((p) => {
@@ -76,12 +74,11 @@ export function BrowseClient() {
   const clearFilters = () => {
     setSearch('')
     setMap('')
-    setDifficulty('')
     setCategory('')
     setSort('votes_desc')
   }
 
-  const hasFilters = search || map || difficulty || category
+  const hasFilters = search || map || category
 
   return (
     <div className="space-y-6">
@@ -106,14 +103,10 @@ export function BrowseClient() {
             </button>
           )}
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <select value={map} onChange={(e) => setMap(e.target.value)} className="select text-sm">
             <option value="">All Maps</option>
             {MAPS.map((m) => <option key={m} value={m}>{m}</option>)}
-          </select>
-          <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="select text-sm">
-            <option value="">All Difficulties</option>
-            {DIFFICULTIES.map((d) => <option key={d} value={d}>{d}</option>)}
           </select>
           <select value={category} onChange={(e) => setCategory(e.target.value)} className="select text-sm">
             <option value="">All Categories</option>

@@ -10,6 +10,7 @@ export const authOptions: NextAuthOptions = {
       id: 'steam',
       name: 'Steam',
       type: 'oauth',
+      checks: ['none'],
       authorization: {
         url: STEAM_OPENID_URL + '/login',
         params: {

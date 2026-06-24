@@ -3,7 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { Hide, Comment } from '@/types'
-import { DIFFICULTY_COLORS, CATEGORY_COLORS, formatDate } from '@/lib/utils'
+import { CATEGORY_COLORS, formatDate } from '@/lib/utils'
 import { VoteButton } from './VoteButton'
 import { CommentSection } from './CommentSection'
 
@@ -130,10 +130,6 @@ export default async function HidePage({ params }: { params: { id: string } }) {
               <div className="flex justify-between items-center">
                 <span className="text-gray-500">Map</span>
                 <span className="text-white font-medium">{hide.map}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-500">Difficulty</span>
-                <span className={`badge ${DIFFICULTY_COLORS[hide.difficulty]}`}>{hide.difficulty}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-500">Category</span>
