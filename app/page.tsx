@@ -3,7 +3,7 @@ import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { HideCard } from '@/components/HideCard'
 import { Hide } from '@/types'
-import { getCurrentWeek, DIFFICULTY_COLORS, CATEGORY_COLORS, timeAgo } from '@/lib/utils'
+import { getCurrentWeek, CATEGORY_COLORS, timeAgo } from '@/lib/utils'
 
 async function getHomeData() {
   const { week, year } = getCurrentWeek()
@@ -106,9 +106,6 @@ export default async function HomePage() {
                 <div className="absolute bottom-4 left-4 right-4">
                   <h3 className="text-white text-2xl font-bold mb-2">{hideOfWeek.title}</h3>
                   <div className="flex items-center gap-3 flex-wrap">
-                    <span className={`badge ${DIFFICULTY_COLORS[hideOfWeek.difficulty]}`}>
-                      {hideOfWeek.difficulty}
-                    </span>
                     <span className={`badge ${CATEGORY_COLORS[hideOfWeek.category]}`}>
                       {hideOfWeek.category}
                     </span>
@@ -204,9 +201,6 @@ export default async function HomePage() {
                       </p>
                       <p className="text-gray-500 text-xs">{timeAgo(hide.created_at)}</p>
                     </div>
-                    <span className={`badge text-xs flex-shrink-0 ${DIFFICULTY_COLORS[hide.difficulty]}`}>
-                      {hide.difficulty}
-                    </span>
                   </div>
                 </Link>
               ))}
