@@ -2,7 +2,7 @@ import { createServerSupabaseClient } from "@/lib/supabase-server";
 import Image from "next/image";
 import Link from "next/link";
 import { Trophy, Medal, Star } from "lucide-react";
-import { Hide, User, DIFFICULTY_COLORS } from "@/types";
+import { Hide, User } from "@/types";
 import { getISOWeek, getYear } from "date-fns";
 
 export const revalidate = 120;

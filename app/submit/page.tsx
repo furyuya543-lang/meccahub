@@ -5,7 +5,7 @@ import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Upload, Link as LinkIcon, Loader2, CheckCircle } from "lucide-react";
-import { MAPS, DIFFICULTIES, CATEGORIES } from "@/types";
+import { MAPS, CATEGORIES } from "@/types";
 
 export default function SubmitPage() {
   const { data: session, status } = useSession();
@@ -16,7 +16,6 @@ export default function SubmitPage() {
     title: "",
     description: "",
     map: "",
-    difficulty: "",
     category: "",
     video_url: "",
   });
@@ -72,7 +71,7 @@ export default function SubmitPage() {
     e.preventDefault();
     setError("");
 
-    if (!form.title || !form.map || !form.difficulty || !form.category) {
+    if (!form.title || !form.map || !form.category) {
       setError("Please fill in all required fields.");
       return;
     }
@@ -145,8 +144,8 @@ export default function SubmitPage() {
           />
         </div>
 
-        {/* Map / Difficulty / Category */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Map / Category */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1.5">
               Map <span className="text-green-400">*</span>
@@ -159,20 +158,6 @@ export default function SubmitPage() {
             >
               <option value="">Select map</option>
               {MAPS.map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">
-              Difficulty <span className="text-green-400">*</span>
-            </label>
-            <select
-              required
-              value={form.difficulty}
-              onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
-              className="w-full bg-[#131320] border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-green-500/50"
-            >
-              <option value="">Select difficulty</option>
-              {DIFFICULTIES.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
           <div>

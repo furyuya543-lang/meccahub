@@ -7,7 +7,6 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
 
   const map = searchParams.get("map");
-  const difficulty = searchParams.get("difficulty");
   const category = searchParams.get("category");
   const search = searchParams.get("search");
   const sort = searchParams.get("sort") ?? "votes";
@@ -21,7 +20,6 @@ export async function GET(req: NextRequest) {
     .range(offset, offset + limit - 1);
 
   if (map) query = query.eq("map", map);
-  if (difficulty) query = query.eq("difficulty", difficulty);
   if (category) query = query.eq("category", category);
   if (search) query = query.ilike("title", `%${search}%`);
 
@@ -48,9 +46,9 @@ export async function POST(req: NextRequest) {
 
   const supabase = createServerSupabaseClient();
   const body = await req.json();
-  const { title, description, map, difficulty, category, screenshot_url, video_url } = body;
+  const { title, description, map, category, screenshot_url, video_url } = body;
 
-  if (!title || !map || !difficulty || !category || !screenshot_url) {
+  if (!title || !map || !category || !screenshot_url) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
@@ -61,7 +59,6 @@ export async function POST(req: NextRequest) {
       title,
       description,
       map,
-      difficulty,
       category,
       screenshot_url,
       video_url: video_url || null,

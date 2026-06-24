@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ThumbsUp, Map, Tag, BarChart2 } from "lucide-react";
+import { ThumbsUp, Map } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { Hide, DIFFICULTY_COLORS } from "@/types";
+import { Hide } from "@/types";
 import clsx from "clsx";
 
 interface HideCardProps {
@@ -12,8 +12,6 @@ interface HideCardProps {
 }
 
 export default function HideCard({ hide, rank, featured }: HideCardProps) {
-  const diffClass = DIFFICULTY_COLORS[hide.difficulty] ?? "text-gray-400";
-
   return (
     <Link
       href={`/hide/${hide.id}`}
