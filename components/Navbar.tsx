@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useSession, signIn, signOut } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import { useState, useRef, useEffect } from 'react'
 
 type SessionUser = {
@@ -129,7 +129,7 @@ export function Navbar() {
               </div>
             ) : (
               <button
-                onClick={() => signIn('steam')}
+                onClick={() => { window.location.href = '/api/steam' }}
                 className="flex items-center gap-2 bg-[#1b2838] hover:bg-[#2a3f5f] border border-[#4c6b8a] text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
               >
                 <SteamIcon />
@@ -215,7 +215,7 @@ export function Navbar() {
               </div>
             ) : (
               <button
-                onClick={() => { signIn('steam'); setMenuOpen(false) }}
+                onClick={() => { window.location.href = '/api/steam'; setMenuOpen(false) }}
                 className="flex items-center gap-2 bg-[#1b2838] hover:bg-[#2a3f5f] border border-[#4c6b8a] text-white text-sm font-medium px-4 py-2 rounded-lg w-full transition-colors"
               >
                 <SteamIcon />

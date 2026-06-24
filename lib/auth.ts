@@ -1,111 +1,58 @@
 import { NextAuthOptions } from 'next-auth'
+import CredentialsProvider from 'next-auth/providers/credentials'
 import { createServiceClient } from './supabase'
-
-const STEAM_OPENID_URL = 'https://steamcommunity.com/openid'
+import { verifySteamToken } from './steam-auth'
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    {
-      id: 'steam',
+    CredentialsProvider({
+      id: 'steam-credentials',
       name: 'Steam',
-      type: 'oauth',
-      checks: ['none'],
-      authorization: {
-        url: STEAM_OPENID_URL + '/login',
-        params: {
-          'openid.ns': 'http://specs.openid.net/auth/2.0',
-          'openid.mode': 'checkid_setup',
-          'openid.return_to': `${process.env.NEXTAUTH_URL}/api/auth/callback/steam`,
-          'openid.realm': process.env.NEXTAUTH_URL,
-          'openid.identity': 'http://specs.openid.net/auth/2.0/identifier_select',
-          'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select',
-        },
+      credentials: {
+        token: { label: 'Token', type: 'text' },
       },
-      token: {
-        url: STEAM_OPENID_URL + '/login',
-        async request(context) {
-          console.log('[auth] token.request called, params keys:', Object.keys(context.params || {}))
-          const params = new URLSearchParams(context.params as Record<string, string>)
-          params.set('openid.mode', 'check_authentication')
+      async authorize(credentials) {
+        const steamId = verifySteamToken(credentials?.token || '')
+        console.log('[auth] credentials authorize, steamId:', steamId)
+        if (!steamId) return null
 
-          const res = await fetch(STEAM_OPENID_URL + '/login', {
-            method: 'POST',
-            body: params,
-          })
-          const text = await res.text()
-          console.log('[auth] steam check_authentication response:', text.slice(0, 200))
+        const apiKey = process.env.STEAM_API_KEY
+        let name = 'Steam User'
+        let image = ''
+        let profileUrl = `https://steamcommunity.com/profiles/${steamId}`
 
-          const isValid = text.includes('is_valid:true')
-          if (!isValid) {
-            console.error('[auth] Steam OpenID validation failed. Response:', text)
-            throw new Error('Steam OpenID validation failed')
-          }
-
-          const claimedId = (context.params as Record<string, string>)['openid.claimed_id'] || ''
-          const steamId = claimedId.replace('https://steamcommunity.com/openid/id/', '')
-          console.log('[auth] token.request resolved steamId:', steamId)
-          return { tokens: { access_token: steamId } }
-        },
-      },
-      userinfo: {
-        url: 'https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/',
-        async request(context) {
-          const steamId = context.tokens.access_token
-          const apiKey = process.env.STEAM_API_KEY
-          console.log('[auth] userinfo.request, steamId:', steamId, '| apiKey set:', !!apiKey && apiKey !== 'placeholder')
-
-          if (!apiKey || apiKey === 'placeholder') {
-            console.error('[auth] STEAM_API_KEY is not configured — returning minimal profile')
-            return {
-              id: steamId,
-              steamId,
-              name: `Steam User`,
-              image: '',
-              profileUrl: `https://steamcommunity.com/profiles/${steamId}`,
+        if (apiKey && apiKey !== 'placeholder') {
+          try {
+            const res = await fetch(
+              `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${apiKey}&steamids=${steamId}`
+            )
+            const data = await res.json()
+            const player = data?.response?.players?.[0]
+            if (player) {
+              name = player.personaname
+              image = player.avatarfull
+              profileUrl = player.profileurl
+              console.log('[auth] fetched Steam player:', name)
+            } else {
+              console.error('[auth] no player from Steam API for', steamId, JSON.stringify(data).slice(0, 200))
             }
+          } catch (err) {
+            console.error('[auth] Steam API fetch error:', err)
           }
-
-          const res = await fetch(
-            `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${apiKey}&steamids=${steamId}`
-          )
-          const data = await res.json()
-          const player = data?.response?.players?.[0]
-
-          if (!player) {
-            console.error('[auth] No player returned from Steam API for steamId:', steamId, '| raw:', JSON.stringify(data).slice(0, 300))
-            return {
-              id: steamId,
-              steamId,
-              name: `Steam User`,
-              image: '',
-              profileUrl: `https://steamcommunity.com/profiles/${steamId}`,
-            }
-          }
-
-          console.log('[auth] player fetched:', player.personaname)
-          return {
-            id: steamId,
-            steamId,
-            name: player.personaname,
-            image: player.avatarfull,
-            profileUrl: player.profileurl,
-          }
-        },
-      },
-      clientId: 'steam',
-      clientSecret: process.env.STEAM_API_KEY!,
-      profile(profile: { id: string; steamId: string; name: string; image: string; profileUrl: string }) {
-        console.log('[auth] profile() called for steamId:', profile.steamId)
-        return {
-          id: profile.steamId,
-          name: profile.name,
-          image: profile.image,
-          email: null,
-          steamId: profile.steamId,
-          profileUrl: profile.profileUrl,
+        } else {
+          console.error('[auth] STEAM_API_KEY not configured — using minimal profile')
         }
+
+        return {
+          id: steamId,
+          steamId,
+          name,
+          image,
+          email: null,
+          profileUrl,
+        } as any
       },
-    },
+    }),
   ],
 
   session: {
@@ -113,13 +60,13 @@ export const authOptions: NextAuthOptions = {
   },
 
   callbacks: {
-    async signIn({ user, profile }) {
-      const p = profile as { steamId?: string; id?: string; profileUrl?: string } | undefined
-      const steamId = p?.steamId || p?.id || user.id
-      console.log('[auth] signIn callback, steamId:', steamId, '| user.id:', user.id)
+    async signIn({ user, account }) {
+      const u = user as any
+      const steamId = u?.steamId || u?.id || ''
+      console.log('[auth] signIn callback, provider:', account?.provider, 'steamId:', steamId)
 
       if (!steamId) {
-        console.error('[auth] signIn: no steamId found — blocking sign in')
+        console.error('[auth] signIn: no steamId — blocking')
         return false
       }
 
@@ -142,17 +89,17 @@ export const authOptions: NextAuthOptions = {
             .update({
               username: user.name || 'Unknown',
               avatar_url: user.image || '',
-              steam_profile_url: p?.profileUrl || '',
+              steam_profile_url: u?.profileUrl || '',
             })
             .eq('steam_id', steamId)
           if (updateErr) console.error('[auth] signIn update error:', updateErr)
-          else console.log('[auth] signIn: updated existing user', existing.id)
+          else console.log('[auth] signIn: updated user', existing.id)
         } else {
           const { error: insertErr } = await supabase.from('users').insert({
             steam_id: steamId,
             username: user.name || 'Unknown',
             avatar_url: user.image || '',
-            steam_profile_url: p?.profileUrl || '',
+            steam_profile_url: u?.profileUrl || '',
             reputation: 0,
             created_at: new Date().toISOString(),
           })
@@ -166,16 +113,17 @@ export const authOptions: NextAuthOptions = {
       return true
     },
 
-    async jwt({ token, user, profile }) {
-      if (profile) {
-        const p = profile as { steamId?: string; id?: string; profileUrl?: string }
-        const steamId = p.steamId || p.id || user?.id || ''
-        console.log('[auth] jwt callback (initial sign-in), steamId:', steamId)
+    async jwt({ token, user }) {
+      // user is only defined on the initial sign-in call
+      if (user) {
+        const u = user as any
+        const steamId = u?.steamId || u?.id || ''
+        console.log('[auth] jwt initial sign-in, steamId:', steamId)
 
         token.steamId = steamId
-        token.profileUrl = p.profileUrl || ''
-        token.username = user?.name || ''
-        token.avatar_url = user?.image || ''
+        token.profileUrl = u?.profileUrl || ''
+        token.username = u?.name || ''
+        token.avatar_url = u?.image || ''
 
         if (steamId) {
           try {
@@ -196,7 +144,7 @@ export const authOptions: NextAuthOptions = {
               console.log('[auth] jwt: loaded supabase user', data.id)
             }
           } catch (err) {
-            console.error('[auth] jwt DB lookup exception:', err)
+            console.error('[auth] jwt DB exception:', err)
           }
         }
       }
@@ -205,7 +153,7 @@ export const authOptions: NextAuthOptions = {
     },
 
     async session({ session, token }) {
-      console.log('[auth] session callback, token.steamId:', token.steamId)
+      console.log('[auth] session callback, steamId:', token.steamId)
       if (session.user) {
         const u = session.user as typeof session.user & {
           steamId: string
