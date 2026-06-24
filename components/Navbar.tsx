@@ -3,11 +3,36 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useSession, signIn, signOut } from 'next-auth/react'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+
+type SessionUser = {
+  name?: string | null
+  image?: string | null
+  steamId?: string
+  username?: string
+  avatar_url?: string
+}
 
 export function Navbar() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  const user = session?.user as SessionUser | undefined
+  const steamId = user?.steamId
+  const username = user?.username || user?.name || ''
+  const avatar = user?.avatar_url || user?.image || ''
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const navLinks = [
     { href: '/', label: 'Home' },
@@ -20,6 +45,7 @@ export function Navbar() {
     <nav className="bg-dark-900/95 backdrop-blur-sm border-b border-dark-700 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
+
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group" onClick={() => setMenuOpen(false)}>
             <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center group-hover:bg-brand-400 transition-colors">
@@ -43,31 +69,63 @@ export function Navbar() {
             ))}
           </div>
 
-          {/* Auth */}
+          {/* Desktop Auth */}
           <div className="hidden md:flex items-center gap-3">
-            {session ? (
-              <div className="flex items-center gap-3">
-                <Link
-                  href={`/profile/${(session.user as { steamId?: string }).steamId}`}
-                  className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            {status === 'loading' ? (
+              <div className="w-8 h-8 rounded-full bg-dark-700 animate-pulse" />
+            ) : status === 'authenticated' ? (
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-dark-700 transition-colors"
                 >
-                  {session.user?.image && (
+                  {avatar ? (
                     <Image
-                      src={session.user.image}
-                      alt={session.user.name || 'User'}
+                      src={avatar}
+                      alt={username}
                       width={32}
                       height={32}
-                      className="rounded-full border border-dark-700"
+                      className="rounded-full border border-dark-600 flex-shrink-0"
                     />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-dark-600 flex items-center justify-center flex-shrink-0">
+                      <span className="text-gray-400 text-xs font-bold">{username[0]?.toUpperCase()}</span>
+                    </div>
                   )}
-                  <span className="text-sm text-gray-300 font-medium">{session.user?.name}</span>
-                </Link>
-                <button
-                  onClick={() => signOut()}
-                  className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
-                >
-                  Sign out
+                  <span className="text-sm text-gray-300 font-medium max-w-[120px] truncate">{username}</span>
+                  <svg
+                    className={`w-3.5 h-3.5 text-gray-500 transition-transform flex-shrink-0 ${dropdownOpen ? 'rotate-180' : ''}`}
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </button>
+
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-1 w-48 bg-dark-800 border border-dark-600 rounded-xl shadow-xl overflow-hidden z-50">
+                    {steamId && (
+                      <Link
+                        href={`/profile/${steamId}`}
+                        className="flex items-center gap-2.5 px-4 py-3 text-sm text-gray-300 hover:bg-dark-700 hover:text-white transition-colors"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        View Profile
+                      </Link>
+                    )}
+                    <button
+                      onClick={() => { signOut({ callbackUrl: '/' }); setDropdownOpen(false) }}
+                      className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-red-400 hover:bg-dark-700 hover:text-red-300 transition-colors border-t border-dark-700"
+                    >
+                      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Disconnect
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <button
@@ -111,29 +169,48 @@ export function Navbar() {
             </Link>
           ))}
           <div className="pt-2 border-t border-dark-700">
-            {session ? (
-              <div className="space-y-2">
-                <Link
-                  href={`/profile/${(session.user as { steamId?: string }).steamId}`}
-                  className="flex items-center gap-2 px-3 py-2"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {session.user?.image && (
+            {status === 'loading' ? (
+              <div className="px-3 py-2">
+                <div className="h-8 bg-dark-700 rounded-lg animate-pulse" />
+              </div>
+            ) : status === 'authenticated' ? (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 px-3 py-2">
+                  {avatar ? (
                     <Image
-                      src={session.user.image}
-                      alt={session.user.name || 'User'}
+                      src={avatar}
+                      alt={username}
                       width={28}
                       height={28}
-                      className="rounded-full"
+                      className="rounded-full border border-dark-600 flex-shrink-0"
                     />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-dark-600 flex items-center justify-center flex-shrink-0">
+                      <span className="text-gray-400 text-xs font-bold">{username[0]?.toUpperCase()}</span>
+                    </div>
                   )}
-                  <span className="text-sm text-gray-300">{session.user?.name}</span>
-                </Link>
+                  <span className="text-sm text-gray-300 font-medium truncate">{username}</span>
+                </div>
+                {steamId && (
+                  <Link
+                    href={`/profile/${steamId}`}
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-white rounded-md transition-colors"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    View Profile
+                  </Link>
+                )}
                 <button
-                  onClick={() => { signOut(); setMenuOpen(false) }}
-                  className="block w-full text-left text-xs text-gray-500 px-3 py-1"
+                  onClick={() => { signOut({ callbackUrl: '/' }); setMenuOpen(false) }}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-400 hover:text-red-300 rounded-md transition-colors"
                 >
-                  Sign out
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  Disconnect
                 </button>
               </div>
             ) : (
