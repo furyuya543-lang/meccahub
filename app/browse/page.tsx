@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import HideCard from "@/components/HideCard";
-import { Hide, MAPS, CATEGORIES, DIFFICULTY_COLORS } from "@/types";
+import { Hide, CATEGORIES, DIFFICULTY_COLORS } from "@/types";
+import { MAPS } from "@/lib/utils";
 
 const DIFFICULTIES = Object.keys(DIFFICULTY_COLORS) as string[];
 

@@ -5,7 +5,8 @@ import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Upload, Link as LinkIcon, Loader2, CheckCircle } from "lucide-react";
-import { MAPS, CATEGORIES } from "@/types";
+import { CATEGORIES } from "@/types";
+import { MAPS } from "@/lib/utils";
 
 export default function SubmitPage() {
   const { data: session, status } = useSession();

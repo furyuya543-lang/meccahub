@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MAPS } from "@/lib/utils";
 
 export default function Footer() {
   return (
@@ -46,7 +47,7 @@ export default function Footer() {
             <ul className="space-y-2 text-sm text-gray-500">
               <li>Meccha Chameleon</li>
               <li>Categories: Best Hide, Camouflage, Funniest, Beginner, Impossible</li>
-              <li>Maps: Map 1, Map 2, Map 3</li>
+              <li>{MAPS.length} maps supported</li>
             </ul>
           </div>
         </div>

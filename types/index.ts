@@ -58,7 +58,7 @@ export interface Award {
   users?: User;
 }
 
-export const MAPS = ['Map 1', 'Map 2', 'Map 3'] as const;
+export { MAPS } from "@/lib/utils";
 export const CATEGORIES: Category[] = [
   'Best Hide',
   'Best Camouflage',
