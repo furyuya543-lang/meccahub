@@ -45,6 +45,16 @@ export interface Comment {
   users?: User;
 }
 
+export type ReportReason = 'Inappropriate' | 'Fake hide' | 'Spam' | 'Wrong map' | 'Other';
+
+export interface Report {
+  id: string;
+  hide_id: string;
+  user_id: string;
+  reason: ReportReason;
+  created_at: string;
+}
+
 export interface Award {
   id: string;
   user_id: string;

@@ -52,9 +52,16 @@ export default function SubmitPage() {
     );
   }
 
+  const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+  const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
   function handleFile(file: File) {
-    if (!file.type.startsWith("image/")) {
-      setError("Please upload an image file.");
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setError("Only JPG, PNG, WEBP, or GIF images are allowed.");
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      setError("File must be under 10MB.");
       return;
     }
     setScreenshot(file);
@@ -200,7 +207,7 @@ export default function SubmitPage() {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept=".jpg,.jpeg,.png,.webp,.gif"
             className="hidden"
             onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
           />

@@ -96,6 +96,16 @@ create table public.map_submissions (
   unique (workshop_id)
 );
 
+-- Reports: users flag hides for review (one report per user per hide)
+create table public.reports (
+  id         uuid default uuid_generate_v4() primary key,
+  hide_id    uuid references public.hides(id) on delete cascade not null,
+  user_id    uuid references public.users(id) on delete cascade not null,
+  reason     text not null check (reason in ('Inappropriate', 'Fake hide', 'Spam', 'Wrong map', 'Other')),
+  created_at timestamp with time zone default now(),
+  unique (hide_id, user_id)
+);
+
 -- Tracks who upvoted which map (one vote per user per map)
 create table public.map_votes (
   id        uuid default uuid_generate_v4() primary key,
@@ -123,6 +133,8 @@ create index on public.map_submissions(votes desc);
 create index on public.map_submissions(user_id);
 create index on public.map_votes(map_id);
 create index on public.map_votes(user_id);
+create index on public.reports(hide_id);
+create index on public.reports(user_id);
 
 -- ========================================
 -- RPC FUNCTIONS (for atomic vote counting)
@@ -160,6 +172,7 @@ alter table public.awards    enable row level security;
 alter table public.archives       enable row level security;
 alter table public.map_submissions enable row level security;
 alter table public.map_votes       enable row level security;
+alter table public.reports         enable row level security;
 
 -- Public read access for all tables
 create policy "public_read_users"    on public.users    for select using (true);
@@ -181,6 +194,8 @@ create policy "public_read_approved_maps"  on public.map_submissions for select 
 create policy "service_all_map_submissions" on public.map_submissions for all using (auth.role() = 'service_role');
 create policy "public_read_map_votes"      on public.map_votes       for select using (true);
 create policy "service_all_map_votes"      on public.map_votes       for all using (auth.role() = 'service_role');
+-- Reports: service role only (reports are not public)
+create policy "service_all_reports" on public.reports for all using (auth.role() = 'service_role');
 
 -- ========================================
 -- STORAGE BUCKET  (run in Supabase dashboard or via API)

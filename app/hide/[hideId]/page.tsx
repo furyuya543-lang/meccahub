@@ -8,6 +8,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Hide, Comment } from "@/types";
 import VoteButton from "@/components/VoteButton";
 import CommentSection from "@/components/CommentSection";
+import ReportButton from "@/components/ReportButton";
 import clsx from "clsx";
 
 export const revalidate = 30;
@@ -103,6 +104,9 @@ export default async function HidePage({
               </span>
             </Link>
           )}
+          <div className="mt-2">
+            <ReportButton hideId={hide.id} />
+          </div>
         </div>
 
         <VoteButton
