@@ -2,7 +2,7 @@ import { createServerSupabaseClient } from "@/lib/supabase-server";
 import Image from "next/image";
 import Link from "next/link";
 import { Trophy, Medal, Star, ArchiveIcon, ArrowRight, User as UserIcon } from "lucide-react";
-import { Hide, User, DIFFICULTY_COLORS } from "@/types";
+import { Hide, User } from "@/types";
 import { getISOWeek, getYear, startOfISOWeek, subWeeks } from "date-fns";
 
 export const revalidate = 120;
@@ -289,11 +289,6 @@ function RankingTable({ hides }: { hides: HideWithUser[] }) {
             <p className="text-sm text-white font-medium truncate">{hide.title}</p>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-xs text-gray-500">{hide.map}</span>
-              <span
-                className={`text-xs px-1.5 py-0.5 rounded border ${DIFFICULTY_COLORS[hide.difficulty] ?? "text-gray-400 border-gray-800"}`}
-              >
-                {hide.difficulty}
-              </span>
               {hide.users && (
                 <span className="text-xs text-gray-600 truncate">
                   by {hide.users.username}

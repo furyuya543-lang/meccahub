@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ThumbsUp, Map } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { Hide, DIFFICULTY_COLORS } from "@/types";
+import { Hide } from "@/types";
 import clsx from "clsx";
 
 interface HideCardProps {
@@ -12,7 +12,6 @@ interface HideCardProps {
 }
 
 export default function HideCard({ hide, rank, featured }: HideCardProps) {
-  const diffClass = DIFFICULTY_COLORS[hide.difficulty] ?? "text-gray-400 border-gray-800";
   return (
     <Link
       href={`/hide/${hide.id}`}
@@ -50,9 +49,6 @@ export default function HideCard({ hide, rank, featured }: HideCardProps) {
         </h3>
 
         <div className="flex flex-wrap gap-2 mb-3">
-          <span className={clsx("text-xs px-2 py-0.5 rounded border", diffClass)}>
-            {hide.difficulty}
-          </span>
           <span className="text-xs px-2 py-0.5 rounded border text-purple-400 bg-purple-400/10 border-purple-400/20">
             {hide.category}
           </span>

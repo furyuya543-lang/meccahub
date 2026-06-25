@@ -3,9 +3,9 @@ import { getSession } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Map, Tag, ExternalLink, Video, BarChart2 } from "lucide-react";
+import { Map, Tag, ExternalLink, Video } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { Hide, Comment, DIFFICULTY_COLORS } from "@/types";
+import { Hide, Comment } from "@/types";
 import VoteButton from "@/components/VoteButton";
 import CommentSection from "@/components/CommentSection";
 import clsx from "clsx";
@@ -51,8 +51,6 @@ export default async function HidePage({
     hasVoted = !!vote;
   }
 
-  const diffClass = DIFFICULTY_COLORS[(hide as Hide).difficulty] ?? "text-gray-400";
-
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Breadcrumb */}
@@ -84,10 +82,6 @@ export default async function HidePage({
           </h1>
           <div className="flex flex-wrap gap-2 mb-3">
             <Badge icon={<Map size={12} />} label={hide.map} />
-            <span className={clsx("flex items-center gap-1 text-xs px-2 py-0.5 rounded border", diffClass)}>
-              <BarChart2 size={12} />
-              {hide.difficulty}
-            </span>
             <Badge icon={<Tag size={12} />} label={hide.category} purple />
           </div>
           {hide.users && (

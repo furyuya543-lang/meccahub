@@ -22,7 +22,6 @@ export interface Hide {
   description: string;
   map: string;
   category: Category;
-  difficulty: 'Easy' | 'Medium' | 'Hard' | 'Impossible';
   screenshot_url: string;
   video_url?: string;
   votes: number;
@@ -67,12 +66,6 @@ export const CATEGORIES: Category[] = [
   'Impossible Hide',
 ];
 
-export const DIFFICULTY_COLORS: Record<string, string> = {
-  Easy: 'text-green-400 border-green-900',
-  Medium: 'text-yellow-400 border-yellow-900',
-  Hard: 'text-orange-400 border-orange-900',
-  Impossible: 'text-red-400 border-red-900',
-};
 
 export interface Archive {
   id: string;

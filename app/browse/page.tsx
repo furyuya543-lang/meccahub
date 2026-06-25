@@ -3,10 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import HideCard from "@/components/HideCard";
-import { Hide, CATEGORIES, DIFFICULTY_COLORS } from "@/types";
+import { Hide, CATEGORIES } from "@/types";
 import { MAPS } from "@/lib/utils";
-
-const DIFFICULTIES = Object.keys(DIFFICULTY_COLORS) as string[];
 
 export default function BrowsePage() {
   const [hides, setHides] = useState<Hide[]>([]);
@@ -16,7 +14,6 @@ export default function BrowsePage() {
 
   const [search, setSearch] = useState("");
   const [map, setMap] = useState("");
-  const [difficulty, setDifficulty] = useState("");
   const [category, setCategory] = useState("");
   const [sort, setSort] = useState("votes");
   const [showFilters, setShowFilters] = useState(false);
@@ -29,7 +26,6 @@ export default function BrowsePage() {
     const params = new URLSearchParams({ page: String(p), sort });
     if (search) params.set("search", search);
     if (map) params.set("map", map);
-    if (difficulty) params.set("difficulty", difficulty);
     if (category) params.set("category", category);
 
     const res = await fetch(`/api/hides?${params}`);
@@ -37,16 +33,15 @@ export default function BrowsePage() {
     setHides(data.hides ?? []);
     setTotal(data.total ?? 0);
     setLoading(false);
-  }, [page, sort, search, map, difficulty, category]);
+  }, [page, sort, search, map, category]);
 
   useEffect(() => { fetchHides(); }, [fetchHides]);
 
-  const activeFilters = [map, difficulty, category].filter(Boolean).length;
+  const activeFilters = [map, category].filter(Boolean).length;
   const totalPages = Math.ceil(total / 12);
 
   function clearFilters() {
     setMap("");
-    setDifficulty("");
     setCategory("");
     setSearch("");
   }
@@ -95,7 +90,7 @@ export default function BrowsePage() {
 
       {/* Filter panel */}
       {showFilters && (
-        <div className="bg-[#131320] border border-gray-800 rounded-xl p-4 mb-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-[#131320] border border-gray-800 rounded-xl p-4 mb-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs text-gray-500 mb-1.5 font-medium">Map</label>
             <select
@@ -105,17 +100,6 @@ export default function BrowsePage() {
             >
               <option value="">All Maps</option>
               {MAPS.map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1.5 font-medium">Difficulty</label>
-            <select
-              value={difficulty}
-              onChange={(e) => setDifficulty(e.target.value)}
-              className="w-full bg-[#1a1a2e] border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-500/50"
-            >
-              <option value="">All Difficulties</option>
-              {DIFFICULTIES.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
           <div>
@@ -129,7 +113,7 @@ export default function BrowsePage() {
               {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-          <div className="sm:col-span-3 flex justify-between items-center">
+          <div className="sm:col-span-2 flex justify-between items-center">
             <button
               onClick={() => { fetchHides(true); setShowFilters(false); }}
               className="bg-green-500 hover:bg-green-400 text-black font-semibold px-5 py-2 rounded-lg text-sm transition-colors"
@@ -152,7 +136,6 @@ export default function BrowsePage() {
       {activeFilters > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
           {map && <Chip label={`Map: ${map}`} onRemove={() => setMap("")} />}
-          {difficulty && <Chip label={`Difficulty: ${difficulty}`} onRemove={() => setDifficulty("")} />}
           {category && <Chip label={`Category: ${category}`} onRemove={() => setCategory("")} />}
         </div>
       )}
