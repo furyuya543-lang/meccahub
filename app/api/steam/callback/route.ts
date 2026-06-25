@@ -18,9 +18,9 @@ export async function GET(req: NextRequest) {
 
   // Re-post to Steam for check_authentication validation
   const verifyParams = new URLSearchParams();
-  for (const [k, v] of sp.entries()) {
+  Array.from(sp.entries()).forEach(([k, v]) => {
     verifyParams.set(k, k === "openid.mode" ? "check_authentication" : v);
-  }
+  });
 
   const verifyRes = await fetch("https://steamcommunity.com/openid/login", {
     method: "POST",
