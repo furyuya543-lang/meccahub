@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     "publishedfileids[0]": workshopId,
   });
 
-  let steamData: Record<string, unknown>;
+  let detail: Record<string, unknown> | null = null;
   try {
     const res = await fetch(
       "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/",
@@ -41,35 +41,51 @@ export async function GET(req: NextRequest) {
         cache: "no-store",
       }
     );
-    if (!res.ok) throw new Error("upstream");
-    steamData = await res.json();
+    if (res.ok) {
+      const json = await res.json();
+      const items = json?.response?.publishedfiledetails as Record<string, unknown>[] | undefined;
+      detail = items?.[0] ?? null;
+    }
   } catch {
-    return NextResponse.json(
-      { error: "Steam API unavailable — please try again" },
-      { status: 502 }
-    );
+    // Steam API unreachable — fall through to URL-only validation below
   }
 
-  const details = steamData?.response as Record<string, unknown> | undefined;
-  const items = details?.publishedfiledetails as Record<string, unknown>[] | undefined;
-  const detail = items?.[0];
+  // If Steam returned data, validate it
+  if (detail !== null) {
+    if (detail.result !== 1) {
+      return NextResponse.json({ error: "Workshop item not found" }, { status: 404 });
+    }
 
-  if (!detail || detail.result !== 1) {
-    return NextResponse.json({ error: "Workshop item not found" }, { status: 404 });
+    // Coerce to number — the Steam API returns numeric JSON but TS types it as unknown
+    const consumerAppId = Number(detail.consumer_appid);
+    const creatorAppId = Number(detail.creator_appid);
+
+    // Only hard-reject if the API returned real app IDs that definitively don't match
+    const appIdKnown = consumerAppId > 0 || creatorAppId > 0;
+    const matchesMeccha = consumerAppId === MECCHA_APP_ID || creatorAppId === MECCHA_APP_ID;
+
+    if (appIdKnown && !matchesMeccha) {
+      return NextResponse.json(
+        { error: "This doesn't appear to be a valid Meccha Chameleon map" },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({
+      workshopId,
+      mapName: (detail.title as string) ?? "",
+      description: (detail.description as string) ?? "",
+      previewImageUrl: (detail.preview_url as string) ?? "",
+      creatorSteamId: (detail.creator as string) ?? "",
+    });
   }
 
-  if (detail.consumer_appid !== MECCHA_APP_ID) {
-    return NextResponse.json(
-      { error: "This doesn't appear to be a valid Meccha Chameleon map" },
-      { status: 400 }
-    );
-  }
-
+  // Steam API unavailable or returned no data — accept any valid workshop URL
   return NextResponse.json({
     workshopId,
-    mapName: (detail.title as string) ?? "",
-    description: (detail.description as string) ?? "",
-    previewImageUrl: (detail.preview_url as string) ?? "",
-    creatorSteamId: (detail.creator as string) ?? "",
+    mapName: "",
+    description: "",
+    previewImageUrl: "",
+    creatorSteamId: "",
   });
 }
