@@ -9,6 +9,7 @@ import { Hide, Comment } from "@/types";
 import VoteButton from "@/components/VoteButton";
 import CommentSection from "@/components/CommentSection";
 import ReportButton from "@/components/ReportButton";
+import ScreenshotLightbox from "@/components/ScreenshotLightbox";
 import clsx from "clsx";
 
 export const revalidate = 30;
@@ -64,16 +65,7 @@ export default async function HidePage({
       </div>
 
       {/* Screenshot */}
-      <div className="relative rounded-2xl overflow-hidden aspect-video bg-gray-900 mb-6">
-        <Image
-          src={hide.screenshot_url}
-          alt={hide.title}
-          fill
-          className="object-cover"
-          priority
-          sizes="(max-width: 896px) 100vw, 896px"
-        />
-      </div>
+      <ScreenshotLightbox src={hide.screenshot_url} alt={hide.title} />
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-6">
