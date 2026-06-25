@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import { HideCard } from '@/components/HideCard'
+import HideCard from '@/components/HideCard'
 import { Hide } from '@/types'
 import { MAPS, CATEGORIES } from '@/lib/utils'
 
