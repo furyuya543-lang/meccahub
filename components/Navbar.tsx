@@ -3,12 +3,25 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
-import { Menu, X, Trophy, Search, Upload, Home, ArchiveIcon, MapPin } from "lucide-react";
-import { useState } from "react";
+import { Menu, X, Trophy, Search, Home, ArchiveIcon, MapPin, ChevronDown, Upload, Map } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 
 export default function Navbar() {
   const { data: session } = useSession();
-  const [open, setOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [submitOpen, setSubmitOpen] = useState(false);
+  const submitRef = useRef<HTMLDivElement>(null);
+
+  // Close submit dropdown when clicking outside
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (submitRef.current && !submitRef.current.contains(e.target as Node)) {
+        setSubmitOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   return (
     <nav className="bg-[#0d0d1a] border-b border-green-900/30 sticky top-0 z-50">
@@ -20,15 +33,46 @@ export default function Navbar() {
             </span>
           </Link>
 
+          {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-6">
             <NavLink href="/" icon={<Home size={15} />} label="Home" />
             <NavLink href="/browse" icon={<Search size={15} />} label="Browse" />
             <NavLink href="/rankings" icon={<Trophy size={15} />} label="Rankings" />
             <NavLink href="/archives" icon={<ArchiveIcon size={15} />} label="Archives" />
             <NavLink href="/maps" icon={<MapPin size={15} />} label="Maps" />
-            {session && (
-              <NavLink href="/submit" icon={<Upload size={15} />} label="Submit" />
-            )}
+
+            {/* Submit dropdown — always visible */}
+            <div ref={submitRef} className="relative">
+              <button
+                onClick={() => setSubmitOpen((o) => !o)}
+                className="flex items-center gap-1.5 bg-green-500 hover:bg-green-400 text-black font-semibold px-3 py-1.5 rounded-lg text-sm transition-colors"
+              >
+                <Upload size={14} />
+                Submit
+                <ChevronDown size={13} className={`transition-transform ${submitOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {submitOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-[#131320] border border-gray-700 rounded-xl shadow-xl overflow-hidden">
+                  <SubmitOption
+                    href="/submit"
+                    icon={<Upload size={14} />}
+                    label="Submit a Hide"
+                    desc="Share a hiding spot"
+                    session={!!session}
+                    onClick={() => setSubmitOpen(false)}
+                  />
+                  <SubmitOption
+                    href="/submit-map"
+                    icon={<Map size={14} />}
+                    label="Submit a Map"
+                    desc="Add a Workshop map"
+                    session={!!session}
+                    onClick={() => setSubmitOpen(false)}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -67,28 +111,68 @@ export default function Navbar() {
             )}
 
             <button
-              onClick={() => setOpen(!open)}
+              onClick={() => setMobileOpen(!mobileOpen)}
               className="md:hidden text-gray-400 hover:text-white transition-colors"
             >
-              {open ? <X size={20} /> : <Menu size={20} />}
+              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
         </div>
 
-        {open && (
+        {/* Mobile menu */}
+        {mobileOpen && (
           <div className="md:hidden py-3 border-t border-gray-800 flex flex-col gap-1">
             <NavLink href="/" icon={<Home size={15} />} label="Home" mobile />
             <NavLink href="/browse" icon={<Search size={15} />} label="Browse" mobile />
             <NavLink href="/rankings" icon={<Trophy size={15} />} label="Rankings" mobile />
             <NavLink href="/archives" icon={<ArchiveIcon size={15} />} label="Archives" mobile />
             <NavLink href="/maps" icon={<MapPin size={15} />} label="Maps" mobile />
-            {session && (
-              <NavLink href="/submit" icon={<Upload size={15} />} label="Submit" mobile />
-            )}
+            <div className="border-t border-gray-800/60 mt-1 pt-1">
+              <NavLink href="/submit" icon={<Upload size={15} />} label="Submit a Hide" mobile />
+              <NavLink href="/submit-map" icon={<Map size={15} />} label="Submit a Map" mobile />
+            </div>
           </div>
         )}
       </div>
     </nav>
+  );
+}
+
+function SubmitOption({
+  href,
+  icon,
+  label,
+  desc,
+  session,
+  onClick,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  label: string;
+  desc: string;
+  session: boolean;
+  onClick: () => void;
+}) {
+  const handleClick = (e: React.MouseEvent) => {
+    if (!session) {
+      e.preventDefault();
+      window.location.href = `/api/steam?callbackUrl=${encodeURIComponent(href)}`;
+    }
+    onClick();
+  };
+
+  return (
+    <Link
+      href={href}
+      onClick={handleClick}
+      className="flex items-start gap-3 px-4 py-3 hover:bg-gray-800/60 transition-colors group"
+    >
+      <span className="text-green-400 mt-0.5 shrink-0">{icon}</span>
+      <div>
+        <p className="text-white text-sm font-medium group-hover:text-green-400 transition-colors">{label}</p>
+        <p className="text-gray-500 text-xs">{desc}</p>
+      </div>
+    </Link>
   );
 }
 

@@ -22,14 +22,21 @@ export async function GET(req: NextRequest) {
     verifyParams.set(k, k === "openid.mode" ? "check_authentication" : v);
   });
 
-  const verifyRes = await fetch("https://steamcommunity.com/openid/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: verifyParams.toString(),
-  });
+  let verifyText = "";
+  try {
+    const verifyRes = await fetch("https://steamcommunity.com/openid/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: verifyParams.toString(),
+    });
+    verifyText = await verifyRes.text();
+  } catch (err) {
+    console.error("[steam/callback] Steam validation fetch failed:", err);
+    return NextResponse.redirect(`${SITE}/?error=OAuthSignin`);
+  }
 
-  const verifyText = await verifyRes.text();
   if (!verifyText.includes("is_valid:true")) {
+    console.error("[steam/callback] Steam validation failed. Response:", verifyText);
     return NextResponse.redirect(`${SITE}/?error=OAuthSignin`);
   }
 
@@ -37,39 +44,53 @@ export async function GET(req: NextRequest) {
   const claimedId = sp.get("openid.claimed_id") ?? "";
   const steamId = claimedId.split("/").pop() ?? "";
   if (!/^\d{17}$/.test(steamId)) {
+    console.error("[steam/callback] Invalid steamId extracted:", steamId);
     return NextResponse.redirect(`${SITE}/?error=OAuthSignin`);
   }
 
-  // Fetch Steam player info
-  const steamRes = await fetch(
-    `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${process.env.STEAM_API_KEY}&steamids=${steamId}`
-  );
-  const steamJson = (await steamRes.json()) as {
-    response: { players: SteamPlayer[] };
-  };
-  const player = steamJson.response?.players?.[0];
-  if (!player) {
-    return NextResponse.redirect(`${SITE}/?error=OAuthSignin`);
+  // Fetch Steam player info (fallback to steamId as username if API key missing)
+  let player: SteamPlayer = { personaname: `User_${steamId.slice(-6)}`, avatarfull: "" };
+  try {
+    const steamRes = await fetch(
+      `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${process.env.STEAM_API_KEY}&steamids=${steamId}`
+    );
+    const steamJson = (await steamRes.json()) as {
+      response: { players: SteamPlayer[] };
+    };
+    const fetched = steamJson.response?.players?.[0];
+    if (fetched) player = fetched;
+    else console.warn("[steam/callback] No player found in Steam API response for steamId:", steamId);
+  } catch (err) {
+    console.warn("[steam/callback] Steam API fetch failed, using fallback username:", err);
   }
 
   // Upsert user in Supabase
   const supabase = createServerSupabaseClient();
-  const { data: existing } = await supabase
+
+  const { data: existing, error: selectError } = await supabase
     .from("users")
     .select("id")
     .eq("steam_id", steamId)
     .maybeSingle();
 
+  if (selectError) {
+    console.error("[steam/callback] Supabase select error:", selectError);
+    return NextResponse.redirect(`${SITE}/?error=OAuthSignin`);
+  }
+
   let userId: string;
 
   if (existing) {
     userId = existing.id as string;
-    await supabase
+    const { error: updateError } = await supabase
       .from("users")
       .update({ username: player.personaname, avatar_url: player.avatarfull })
       .eq("steam_id", steamId);
+    if (updateError) {
+      console.error("[steam/callback] Supabase update error:", updateError);
+    }
   } else {
-    const { data: created } = await supabase
+    const { data: created, error: insertError } = await supabase
       .from("users")
       .insert({
         steam_id: steamId,
@@ -80,10 +101,17 @@ export async function GET(req: NextRequest) {
       })
       .select("id")
       .maybeSingle();
+
+    if (insertError) {
+      console.error("[steam/callback] Supabase insert error:", insertError);
+      return NextResponse.redirect(`${SITE}/?error=OAuthSignin`);
+    }
+
     userId = (created?.id as string) ?? "";
   }
 
   if (!userId) {
+    console.error("[steam/callback] userId is empty after upsert for steamId:", steamId);
     return NextResponse.redirect(`${SITE}/?error=OAuthSignin`);
   }
 
