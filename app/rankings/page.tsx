@@ -1,9 +1,9 @@
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import Image from "next/image";
 import Link from "next/link";
-import { Trophy, Medal, Star } from "lucide-react";
-import { Hide, User } from "@/types";
-import { getISOWeek, getYear } from "date-fns";
+import { Trophy, Medal, Star, ArchiveIcon, ArrowRight, User as UserIcon } from "lucide-react";
+import { Hide, User, DIFFICULTY_COLORS } from "@/types";
+import { getISOWeek, getYear, startOfISOWeek, subWeeks } from "date-fns";
 
 export const revalidate = 120;
 
@@ -22,27 +22,60 @@ export default async function RankingsPage() {
   const currentWeek = getISOWeek(now);
   const currentYear = getYear(now);
 
-  const [{ data: weeklyHides }, { data: allTimeHides }, { data: topPlayers }] =
-    await Promise.all([
-      supabase
-        .from("hides")
-        .select("*, users(*)")
-        .gte("created_at", monday.toISOString())
-        .order("votes", { ascending: false })
-        .limit(20),
+  // Last week's date range for archive lookup
+  const lastWeekStart = startOfISOWeek(subWeeks(now, 1));
+  const lastWeek = getISOWeek(lastWeekStart);
+  const lastYear = getYear(lastWeekStart);
 
-      supabase
-        .from("hides")
-        .select("*, users(*)")
-        .order("votes", { ascending: false })
-        .limit(20),
+  const [
+    { data: weeklyHides },
+    { data: allTimeHides },
+    { data: topPlayers },
+    { data: lastHideArchive },
+    { data: lastPlayerArchive },
+  ] = await Promise.all([
+    supabase
+      .from("hides")
+      .select("*, users(*)")
+      .gte("created_at", monday.toISOString())
+      .order("votes", { ascending: false })
+      .limit(20),
 
-      supabase
-        .from("users")
-        .select("*, hides(votes)")
-        .order("reputation", { ascending: false })
-        .limit(10),
-    ]);
+    supabase
+      .from("hides")
+      .select("*, users(*)")
+      .order("votes", { ascending: false })
+      .limit(20),
+
+    supabase
+      .from("users")
+      .select("*, hides(votes)")
+      .order("reputation", { ascending: false })
+      .limit(10),
+
+    supabase
+      .from("archives")
+      .select("*, hides(id, title, screenshot_url, votes, users(id, username))")
+      .eq("category", "hide")
+      .eq("week", lastWeek)
+      .eq("year", lastYear)
+      .maybeSingle(),
+
+    supabase
+      .from("archives")
+      .select("*, users(id, username, avatar_url)")
+      .eq("category", "player")
+      .eq("week", lastWeek)
+      .eq("year", lastYear)
+      .maybeSingle(),
+  ]);
+
+  const lastWinnerHide = lastHideArchive?.hides as
+    | { id: string; title: string; screenshot_url: string; votes: number; users?: { id: string; username: string } }
+    | undefined;
+  const lastWinnerPlayer = lastPlayerArchive?.users as
+    | { id: string; username: string; avatar_url: string }
+    | undefined;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -55,6 +88,88 @@ export default async function RankingsPage() {
           Week {currentWeek}, {currentYear}
         </p>
       </div>
+
+      {/* Last week's winners banner */}
+      {(lastWinnerHide || lastWinnerPlayer) && (
+        <div className="mb-8 bg-[#131320] border border-yellow-900/30 rounded-xl overflow-hidden">
+          <div className="px-5 py-3 border-b border-gray-800/60 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-yellow-400" />
+              <span className="text-white font-bold text-sm">
+                Last Week&apos;s Winners — Week {lastWeek}, {lastYear}
+              </span>
+            </div>
+            <Link
+              href="/archives"
+              className="text-xs text-green-400 hover:text-green-300 transition-colors flex items-center gap-1"
+            >
+              All archives <ArrowRight size={11} />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-800/60">
+            {/* Hide winner */}
+            <div className="p-5">
+              <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <Trophy size={11} className="text-yellow-400" />
+                Hide of the Week
+              </p>
+              {lastWinnerHide ? (
+                <Link href={`/hide/${lastWinnerHide.id}`} className="flex items-center gap-3 group">
+                  {lastWinnerHide.screenshot_url && (
+                    <Image
+                      src={lastWinnerHide.screenshot_url}
+                      alt={lastWinnerHide.title}
+                      width={72}
+                      height={48}
+                      className="rounded-lg object-cover border border-gray-700 shrink-0 group-hover:border-yellow-500/50 transition-colors"
+                    />
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-white group-hover:text-yellow-400 transition-colors truncate">
+                      {lastWinnerHide.title}
+                    </p>
+                    {lastWinnerHide.users && (
+                      <p className="text-xs text-gray-500 mt-0.5">by {lastWinnerHide.users.username}</p>
+                    )}
+                    <p className="text-xs text-green-400 font-bold mt-1">{lastHideArchive!.votes} votes</p>
+                  </div>
+                </Link>
+              ) : (
+                <p className="text-sm text-gray-600 italic">No data</p>
+              )}
+            </div>
+
+            {/* Player winner */}
+            <div className="p-5">
+              <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <UserIcon size={11} className="text-green-400" />
+                Player of the Week
+              </p>
+              {lastWinnerPlayer ? (
+                <Link href={`/profile/${lastWinnerPlayer.id}`} className="flex items-center gap-3 group">
+                  <Image
+                    src={lastWinnerPlayer.avatar_url ?? "/default-avatar.png"}
+                    alt={lastWinnerPlayer.username}
+                    width={40}
+                    height={40}
+                    className="rounded-full border border-gray-700 group-hover:border-green-500/50 transition-colors shrink-0"
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-white group-hover:text-green-400 transition-colors">
+                      {lastWinnerPlayer.username}
+                    </p>
+                    <p className="text-xs text-green-400 font-bold mt-0.5">
+                      {lastPlayerArchive!.votes} votes earned
+                    </p>
+                  </div>
+                </Link>
+              ) : (
+                <p className="text-sm text-gray-600 italic">No data</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Weekly Rankings */}
@@ -74,6 +189,21 @@ export default async function RankingsPage() {
             </h2>
             <RankingTable hides={(allTimeHides ?? []) as HideWithUser[]} />
           </section>
+
+          {/* Past Winners link */}
+          <Link
+            href="/archives"
+            className="flex items-center justify-between bg-[#131320] border border-gray-800 hover:border-green-900/50 rounded-xl px-5 py-4 group transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <ArchiveIcon className="text-yellow-400 w-5 h-5" />
+              <div>
+                <p className="text-white font-semibold text-sm">Past Winners</p>
+                <p className="text-xs text-gray-500">Browse every week&apos;s best hide and top player</p>
+              </div>
+            </div>
+            <ArrowRight className="text-gray-600 group-hover:text-green-400 transition-colors" size={18} />
+          </Link>
         </div>
 
         {/* Top Players sidebar */}
@@ -159,7 +289,9 @@ function RankingTable({ hides }: { hides: HideWithUser[] }) {
             <p className="text-sm text-white font-medium truncate">{hide.title}</p>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-xs text-gray-500">{hide.map}</span>
-              <span className={`text-xs px-1.5 py-0.5 rounded border ${DIFFICULTY_COLORS[hide.difficulty]}`}>
+              <span
+                className={`text-xs px-1.5 py-0.5 rounded border ${DIFFICULTY_COLORS[hide.difficulty] ?? "text-gray-400 border-gray-800"}`}
+              >
                 {hide.difficulty}
               </span>
               {hide.users && (

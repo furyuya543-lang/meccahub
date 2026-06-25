@@ -3,7 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import HideCard from "@/components/HideCard";
-import { Hide, MAPS, CATEGORIES } from "@/types";
+import { Hide, MAPS, CATEGORIES, DIFFICULTY_COLORS } from "@/types";
+
+const DIFFICULTIES = Object.keys(DIFFICULTY_COLORS) as string[];
 
 export default function BrowsePage() {
   const [hides, setHides] = useState<Hide[]>([]);

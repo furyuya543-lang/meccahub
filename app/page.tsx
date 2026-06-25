@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Trophy, Clock, ArrowRight, Flame } from "lucide-react";
+import { Trophy, Clock, ArrowRight, Flame, User as UserIcon } from "lucide-react";
+import Image from "next/image";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import HideCard from "@/components/HideCard";
 import { Hide } from "@/types";
@@ -13,30 +14,60 @@ export default async function HomePage() {
   monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
   monday.setHours(0, 0, 0, 0);
 
-  const [{ data: awardData }, { data: topHides }, { data: recentHides }] =
-    await Promise.all([
-      supabase
-        .from("awards")
-        .select("*, hides(*, users(*))")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single(),
+  const [
+    { data: awardData },
+    { data: topHides },
+    { data: recentHides },
+    { data: weeklyVoteRows },
+  ] = await Promise.all([
+    supabase
+      .from("awards")
+      .select("*, hides(*, users(*))")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single(),
 
-      supabase
-        .from("hides")
-        .select("*, users(*)")
-        .gte("created_at", monday.toISOString())
-        .order("votes", { ascending: false })
-        .limit(5),
+    supabase
+      .from("hides")
+      .select("*, users(*)")
+      .gte("created_at", monday.toISOString())
+      .order("votes", { ascending: false })
+      .limit(5),
 
-      supabase
-        .from("hides")
-        .select("*, users(*)")
-        .order("created_at", { ascending: false })
-        .limit(6),
-    ]);
+    supabase
+      .from("hides")
+      .select("*, users(*)")
+      .order("created_at", { ascending: false })
+      .limit(6),
+
+    // Votes cast this week — used to determine best player
+    supabase
+      .from("votes")
+      .select("hide_id, hides(user_id, users(id, username, avatar_url))")
+      .gte("created_at", monday.toISOString()),
+  ]);
 
   const hideOfWeek = awardData?.hides as Hide | undefined;
+
+  // Compute best player of the week from weekly votes
+  type PlayerInfo = { id: string; username: string; avatar_url: string; count: number };
+
+  const bestPlayer = ((): PlayerInfo | null => {
+    if (!weeklyVoteRows || weeklyVoteRows.length === 0) return null;
+    const counts: Record<string, PlayerInfo> = {};
+    for (const row of weeklyVoteRows) {
+      const hide = row.hides as unknown as { user_id: string; users?: { id: string; username: string; avatar_url: string } } | null;
+      if (!hide?.users) continue;
+      const u = hide.users;
+      counts[u.id] = counts[u.id]
+        ? { ...counts[u.id], count: counts[u.id].count + 1 }
+        : { id: u.id, username: u.username, avatar_url: u.avatar_url, count: 1 };
+    }
+    return Object.values(counts).reduce<PlayerInfo | null>(
+      (best, p) => (!best || p.count > best.count ? p : best),
+      null
+    );
+  })();
 
   return (
     <div className="min-h-screen">
@@ -93,6 +124,40 @@ export default async function HomePage() {
             <div className="max-w-md">
               <HideCard hide={hideOfWeek} featured />
             </div>
+          </section>
+        )}
+
+        {/* Best Player of the Week */}
+        {bestPlayer !== null && (
+          <section>
+            <div className="flex items-center gap-3 mb-6">
+              <UserIcon className="text-green-400 w-6 h-6" />
+              <h2 className="text-2xl font-bold text-white">Best Player This Week</h2>
+              <span className="bg-green-400/10 text-green-400 border border-green-400/20 text-xs px-2 py-0.5 rounded-full font-medium">
+                Live
+              </span>
+            </div>
+            <Link
+              href={`/profile/${bestPlayer.id}`}
+              className="inline-flex items-center gap-4 bg-[#131320] border border-gray-800 hover:border-green-900/50 rounded-xl px-5 py-4 group transition-colors"
+            >
+              <Image
+                src={bestPlayer.avatar_url ?? "/default-avatar.png"}
+                alt={bestPlayer.username}
+                width={52}
+                height={52}
+                className="rounded-full border-2 border-green-500/40 shrink-0"
+              />
+              <div>
+                <p className="text-white font-bold text-base group-hover:text-green-400 transition-colors">
+                  {bestPlayer.username}
+                </p>
+                <p className="text-sm text-gray-500">
+                  <span className="text-green-400 font-semibold">{bestPlayer.count}</span> votes earned this week
+                </p>
+              </div>
+              <ArrowRight className="ml-2 text-gray-700 group-hover:text-green-400 transition-colors" size={18} />
+            </Link>
           </section>
         )}
 

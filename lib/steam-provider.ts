@@ -1,4 +1,5 @@
-import type { OAuthConfig } from "next-auth/providers";
+// @ts-nocheck — Steam OpenID 2.0 doesn't map cleanly to next-auth's OAuth type system
+import type { OAuthConfig } from "next-auth/providers/index";
 
 export interface SteamProfile extends Record<string, unknown> {
   steamid: string;

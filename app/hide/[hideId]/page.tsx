@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Map, Tag, ExternalLink, Video } from "lucide-react";
+import { Map, Tag, ExternalLink, Video, BarChart2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Hide, Comment, DIFFICULTY_COLORS } from "@/types";
 import VoteButton from "@/components/VoteButton";

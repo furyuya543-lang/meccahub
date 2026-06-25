@@ -67,6 +67,19 @@ create table public.awards (
   created_at      timestamp with time zone default now()
 );
 
+-- Weekly archive: stores each week's top hide and best player before reset
+create table public.archives (
+  id              uuid default uuid_generate_v4() primary key,
+  week            integer not null,
+  year            integer not null,
+  category        text not null check (category in ('hide', 'player')),
+  hide_id         uuid references public.hides(id) on delete set null,
+  user_id         uuid references public.users(id) on delete set null,
+  votes           integer not null default 0,
+  created_at      timestamp with time zone default now(),
+  unique (week, year, category)
+);
+
 -- ========================================
 -- INDEXES
 -- ========================================
@@ -78,6 +91,8 @@ create index on public.votes(hide_id);
 create index on public.votes(user_id);
 create index on public.comments(hide_id);
 create index on public.awards(week, year);
+create index on public.archives(year, week desc);
+create index on public.archives(category);
 
 -- ========================================
 -- RPC FUNCTIONS (for atomic vote counting)
@@ -101,21 +116,24 @@ alter table public.users   enable row level security;
 alter table public.hides   enable row level security;
 alter table public.votes   enable row level security;
 alter table public.comments enable row level security;
-alter table public.awards  enable row level security;
+alter table public.awards    enable row level security;
+alter table public.archives  enable row level security;
 
 -- Public read access for all tables
 create policy "public_read_users"    on public.users    for select using (true);
 create policy "public_read_hides"    on public.hides    for select using (true);
 create policy "public_read_votes"    on public.votes    for select using (true);
 create policy "public_read_comments" on public.comments for select using (true);
-create policy "public_read_awards"   on public.awards   for select using (true);
+create policy "public_read_awards"    on public.awards    for select using (true);
+create policy "public_read_archives"  on public.archives  for select using (true);
 
 -- Service role full access (used by the Next.js API routes)
 create policy "service_all_users"    on public.users    for all using (auth.role() = 'service_role');
 create policy "service_all_hides"    on public.hides    for all using (auth.role() = 'service_role');
 create policy "service_all_votes"    on public.votes    for all using (auth.role() = 'service_role');
 create policy "service_all_comments" on public.comments for all using (auth.role() = 'service_role');
-create policy "service_all_awards"   on public.awards   for all using (auth.role() = 'service_role');
+create policy "service_all_awards"    on public.awards    for all using (auth.role() = 'service_role');
+create policy "service_all_archives"  on public.archives  for all using (auth.role() = 'service_role');
 
 -- ========================================
 -- STORAGE BUCKET  (run in Supabase dashboard or via API)
