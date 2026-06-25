@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession, signIn } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -57,7 +57,7 @@ export default function SubmitMapPage() {
           Sign in with Steam to submit a Workshop map for the community.
         </p>
         <button
-          onClick={() => signIn("steam")}
+          onClick={() => { window.location.href = "/api/steam?callbackUrl=/submit-map"; }}
           className="bg-[#1b2838] hover:bg-[#213347] text-white px-6 py-3 rounded-lg text-sm font-medium border border-[#2a475e] transition-colors"
         >
           Sign in with Steam

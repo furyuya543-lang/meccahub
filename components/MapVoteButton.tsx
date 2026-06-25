@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ThumbsUp } from "lucide-react";
-import { useSession, signIn } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import clsx from "clsx";
 
 interface MapVoteButtonProps {
@@ -23,7 +23,7 @@ export default function MapVoteButton({
 
   async function handleVote() {
     if (!session) {
-      signIn("steam");
+      window.location.href = `/api/steam?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
       return;
     }
     if (loading) return;

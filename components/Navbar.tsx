@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useSession, signIn, signOut } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { Menu, X, Trophy, Search, Upload, Home, ArchiveIcon, MapPin } from "lucide-react";
 import { useState } from "react";
 
@@ -58,7 +58,7 @@ export default function Navbar() {
               </div>
             ) : (
               <button
-                onClick={() => signIn("steam")}
+                onClick={() => { window.location.href = `/api/steam?callbackUrl=${encodeURIComponent(window.location.pathname)}`; }}
                 className="flex items-center gap-2 bg-[#1b2838] hover:bg-[#213347] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-[#2a475e]"
               >
                 <SteamIcon />

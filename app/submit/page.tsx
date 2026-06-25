@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useSession, signIn } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Upload, Link as LinkIcon, Loader2, CheckCircle } from "lucide-react";
@@ -43,7 +43,7 @@ export default function SubmitPage() {
           You need to sign in with Steam to submit a hide.
         </p>
         <button
-          onClick={() => signIn("steam")}
+          onClick={() => { window.location.href = "/api/steam?callbackUrl=/submit"; }}
           className="bg-[#1b2838] hover:bg-[#213347] text-white px-6 py-3 rounded-lg font-medium border border-[#2a475e] transition-colors"
         >
           Sign in with Steam

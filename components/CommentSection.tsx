@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { useSession, signIn } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { Send } from "lucide-react";
 import { Comment } from "@/types";
 
@@ -25,7 +25,7 @@ export default function CommentSection({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!session) {
-      signIn("steam");
+      window.location.href = `/api/steam?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
       return;
     }
     if (!content.trim() || submitting) return;
@@ -88,7 +88,7 @@ export default function CommentSection({
         <div className="bg-[#131320] border border-gray-800 rounded-lg p-4 mb-6 text-center">
           <p className="text-gray-400 text-sm mb-2">Sign in to leave a comment</p>
           <button
-            onClick={() => signIn("steam")}
+            onClick={() => { window.location.href = `/api/steam?callbackUrl=${encodeURIComponent(window.location.pathname)}`; }}
             className="text-green-400 hover:text-green-300 text-sm font-medium"
           >
             Sign in with Steam
