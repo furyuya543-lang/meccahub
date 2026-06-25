@@ -67,6 +67,21 @@ export const CATEGORIES: Category[] = [
 ];
 
 
+export interface MapSubmission {
+  id: string;
+  user_id: string;
+  map_name: string;
+  steam_workshop_url: string;
+  workshop_id: string;
+  description: string | null;
+  screenshot_url: string | null;
+  preview_image_url: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  votes: number;
+  created_at: string;
+  users?: User;
+}
+
 export interface Archive {
   id: string;
   week: number;

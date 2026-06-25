@@ -80,6 +80,31 @@ create table public.archives (
   unique (week, year, category)
 );
 
+-- Steam Workshop map submissions (status: pending → approved/rejected by admin)
+create table public.map_submissions (
+  id                uuid default uuid_generate_v4() primary key,
+  user_id           uuid references public.users(id) on delete cascade not null,
+  map_name          text not null,
+  steam_workshop_url text not null,
+  workshop_id       text not null,
+  description       text,
+  screenshot_url    text,
+  preview_image_url text,
+  status            text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  votes             integer not null default 0,
+  created_at        timestamp with time zone default now(),
+  unique (workshop_id)
+);
+
+-- Tracks who upvoted which map (one vote per user per map)
+create table public.map_votes (
+  id        uuid default uuid_generate_v4() primary key,
+  user_id   uuid references public.users(id) on delete cascade not null,
+  map_id    uuid references public.map_submissions(id) on delete cascade not null,
+  created_at timestamp with time zone default now(),
+  unique (user_id, map_id)
+);
+
 -- ========================================
 -- INDEXES
 -- ========================================
@@ -93,6 +118,11 @@ create index on public.comments(hide_id);
 create index on public.awards(week, year);
 create index on public.archives(year, week desc);
 create index on public.archives(category);
+create index on public.map_submissions(status);
+create index on public.map_submissions(votes desc);
+create index on public.map_submissions(user_id);
+create index on public.map_votes(map_id);
+create index on public.map_votes(user_id);
 
 -- ========================================
 -- RPC FUNCTIONS (for atomic vote counting)
@@ -108,6 +138,16 @@ returns void language sql security definer as $$
   update public.hides set votes = greatest(votes - 1, 0) where id = hide_id;
 $$;
 
+create or replace function increment_map_votes(map_id uuid)
+returns void language sql security definer as $$
+  update public.map_submissions set votes = votes + 1 where id = map_id;
+$$;
+
+create or replace function decrement_map_votes(map_id uuid)
+returns void language sql security definer as $$
+  update public.map_submissions set votes = greatest(votes - 1, 0) where id = map_id;
+$$;
+
 -- ========================================
 -- ROW LEVEL SECURITY
 -- ========================================
@@ -117,7 +157,9 @@ alter table public.hides   enable row level security;
 alter table public.votes   enable row level security;
 alter table public.comments enable row level security;
 alter table public.awards    enable row level security;
-alter table public.archives  enable row level security;
+alter table public.archives       enable row level security;
+alter table public.map_submissions enable row level security;
+alter table public.map_votes       enable row level security;
 
 -- Public read access for all tables
 create policy "public_read_users"    on public.users    for select using (true);
@@ -133,7 +175,12 @@ create policy "service_all_hides"    on public.hides    for all using (auth.role
 create policy "service_all_votes"    on public.votes    for all using (auth.role() = 'service_role');
 create policy "service_all_comments" on public.comments for all using (auth.role() = 'service_role');
 create policy "service_all_awards"    on public.awards    for all using (auth.role() = 'service_role');
-create policy "service_all_archives"  on public.archives  for all using (auth.role() = 'service_role');
+create policy "service_all_archives"       on public.archives       for all using (auth.role() = 'service_role');
+-- Maps: public can only see approved; service_role manages everything
+create policy "public_read_approved_maps"  on public.map_submissions for select using (status = 'approved');
+create policy "service_all_map_submissions" on public.map_submissions for all using (auth.role() = 'service_role');
+create policy "public_read_map_votes"      on public.map_votes       for select using (true);
+create policy "service_all_map_votes"      on public.map_votes       for all using (auth.role() = 'service_role');
 
 -- ========================================
 -- STORAGE BUCKET  (run in Supabase dashboard or via API)

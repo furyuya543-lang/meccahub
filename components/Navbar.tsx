@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useSession, signIn, signOut } from "next-auth/react";
-import { Menu, X, Trophy, Search, Upload, Home, ArchiveIcon } from "lucide-react";
+import { Menu, X, Trophy, Search, Upload, Home, ArchiveIcon, MapPin } from "lucide-react";
 import { useState } from "react";
 
 export default function Navbar() {
@@ -25,6 +25,7 @@ export default function Navbar() {
             <NavLink href="/browse" icon={<Search size={15} />} label="Browse" />
             <NavLink href="/rankings" icon={<Trophy size={15} />} label="Rankings" />
             <NavLink href="/archives" icon={<ArchiveIcon size={15} />} label="Archives" />
+            <NavLink href="/maps" icon={<MapPin size={15} />} label="Maps" />
             {session && (
               <NavLink href="/submit" icon={<Upload size={15} />} label="Submit" />
             )}
@@ -80,6 +81,7 @@ export default function Navbar() {
             <NavLink href="/browse" icon={<Search size={15} />} label="Browse" mobile />
             <NavLink href="/rankings" icon={<Trophy size={15} />} label="Rankings" mobile />
             <NavLink href="/archives" icon={<ArchiveIcon size={15} />} label="Archives" mobile />
+            <NavLink href="/maps" icon={<MapPin size={15} />} label="Maps" mobile />
             {session && (
               <NavLink href="/submit" icon={<Upload size={15} />} label="Submit" mobile />
             )}
