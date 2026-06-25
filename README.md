@@ -1,138 +1,139 @@
 # MeccaHub
 
-Community ranking website for **Meccha Chameleon** — submit your best hides, vote on favorites, and compete for weekly rankings.
+Community ranking website for **Meccha Chameleon** — discover, share, and vote on the best hides.
 
 ## Tech Stack
 
-- **Next.js 14** (App Router, TypeScript)
-- **Supabase** (PostgreSQL database, auth helper, storage)
-- **Tailwind CSS** (dark gaming theme)
-- **NextAuth v4** (Steam OpenID login)
-- **Netlify** (deployment with `@netlify/plugin-nextjs`)
+- **Next.js 14** (App Router)
+- **Supabase** — database, auth helper, file storage
+- **Tailwind CSS** — dark gaming aesthetic
+- **next-auth** — Steam OpenID login
+- **Netlify** — deployment via `@netlify/plugin-nextjs`
 
 ---
 
-## Setup Instructions
+## Project Structure
 
-### 1. Clone and install
+```
+meccahub/
+├── app/
+│   ├── page.tsx                    # Homepage
+│   ├── browse/page.tsx             # Browse & filter hides
+│   ├── submit/page.tsx             # Submit a hide
+│   ├── rankings/page.tsx           # Weekly & all-time rankings
+│   ├── profile/[userId]/page.tsx   # Player profile
+│   ├── hide/[hideId]/page.tsx      # Individual hide detail
+│   └── api/                        # API routes
+├── components/                     # Shared UI components
+├── lib/                            # Supabase client, auth config, Steam provider
+├── types/                          # TypeScript types
+└── supabase/schema.sql             # Full DB schema with RLS + RPC functions
+```
+
+---
+
+## Setup
+
+### 1. Clone & install
 
 ```bash
-git clone <your-repo-url>
+git clone <repo>
 cd meccahub
 npm install
 ```
 
-### 2. Configure environment variables
+### 2. Create a Supabase project
 
-Copy `.env.example` to `.env.local`:
+1. Go to [supabase.com](https://supabase.com) and create a new project.
+2. In **SQL Editor**, paste and run the contents of `supabase/schema.sql`.
+3. Go to **Storage → New bucket**, create a bucket named `screenshots`, and enable **Public** access.
+
+### 3. Get a Steam API key
+
+Register at [steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey).
+
+### 4. Configure environment variables
 
 ```bash
 cp .env.example .env.local
 ```
 
-Fill in the values:
+Fill in `.env.local`:
 
-| Variable | How to get it |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Settings → API |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Settings → API |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Settings → API (service_role key) |
-| `NEXTAUTH_URL` | `http://localhost:3000` (dev) or your Netlify URL (prod) |
-| `NEXTAUTH_SECRET` | Run `openssl rand -base64 32` |
-| `STEAM_API_KEY` | https://steamcommunity.com/dev/apikey |
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=<random 32+ char string>
+STEAM_API_KEY=<your steam api key>
+```
 
-### 3. Set up Supabase
+Generate a secret:
+```bash
+openssl rand -base64 32
+```
 
-1. Create a new project at [supabase.com](https://supabase.com)
-2. Go to **SQL Editor** and run the contents of `supabase/schema.sql`
-3. Go to **Storage** → create a bucket called `screenshots` → set it to **Public**
-
-### 4. Run locally
+### 5. Run locally
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open [http://localhost:3000](http://localhost:3000).
+
+---
+
+## Steam Auth Notes
+
+Steam uses **OpenID 2.0**, not OAuth 2.0. The custom provider in `lib/steam-provider.ts` handles:
+
+1. Redirecting to `https://steamcommunity.com/openid/login`
+2. Verifying the signed assertion on callback
+3. Fetching user data from the Steam Web API
+
+`NEXTAUTH_URL` **must** match the exact URL Steam redirects back to (including protocol). For local development use `http://localhost:3000`. For production use your Netlify URL.
 
 ---
 
 ## Deploying to Netlify
 
-### 1. Install Netlify plugin
+1. Push to GitHub.
+2. Create a new Netlify site from your repo.
+3. Set all environment variables from `.env.local` in Netlify → Site settings → Environment variables. Set `NEXTAUTH_URL` to your Netlify domain (e.g. `https://meccahub.netlify.app`).
+4. Netlify auto-detects `netlify.toml` and installs `@netlify/plugin-nextjs`.
 
-```bash
-npm install @netlify/plugin-nextjs --save-dev
+---
+
+## Adding Maps
+
+Maps are defined in `types/index.ts`:
+
+```ts
+export const MAPS = ['Map 1', 'Map 2', 'Map 3'] as const;
 ```
 
-### 2. Push to GitHub
+Add new map names to this array and they will appear everywhere (submit form, browse filters, etc.).
 
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-git remote add origin <your-github-repo>
-git push -u origin main
-```
+---
 
-### 3. Connect to Netlify
+## Weekly Rankings Reset
 
-1. Go to [netlify.com](https://netlify.com) → **Add new site** → **Import from Git**
-2. Select your GitHub repo
-3. Build settings are auto-detected from `netlify.toml`
-4. Go to **Site settings → Environment variables** and add all variables from `.env.example`
-5. Set `NEXTAUTH_URL` to your Netlify site URL (e.g. `https://meccahub.netlify.app`)
-6. Deploy!
+Rankings are not deleted — they are calculated dynamically based on `hides.created_at` filtered to the current ISO week (Monday → Sunday). No cron job needed.
+
+**Hide of the Week** is manually awarded by inserting a row into the `awards` table. You can do this from the Supabase dashboard.
 
 ---
 
 ## Database Tables
 
 | Table | Description |
-|---|---|
-| `users` | Steam users (steam_id, username, avatar, profile URL, reputation) |
-| `hides` | Submitted hiding spots (title, map, difficulty, category, screenshot, votes) |
-| `votes` | Vote records (one per user per hide per day) |
+|-------|-------------|
+| `users` | Steam users (created on first login) |
+| `hides` | Submitted hide spots |
+| `votes` | One vote per user per hide per day |
 | `comments` | Comments on hides |
-| `awards` | Weekly awards (Hide of the Week, etc.) |
-
----
-
-## Pages
-
-| Route | Description |
-|---|---|
-| `/` | Homepage — Hide of the Week, top 5 weekly, recent submissions |
-| `/browse` | Searchable/filterable hide database |
-| `/submit` | Submit a new hide (requires Steam login) |
-| `/rankings` | Weekly + all-time rankings for hides and players |
-| `/profile/[steamId]` | Player profile — hides, votes earned, awards |
-| `/hide/[id]` | Individual hide — details, voting, comments |
-
----
-
-## Features
-
-- **Steam OpenID login** — stores only public data (SteamID, username, avatar)
-- **Upvote system** — one vote per user per hide per day
-- **Weekly rankings** — reset every Monday
-- **Search & filter** — by map, difficulty, category, sort order
-- **Comments** — on each hide page
-- **Categories**: Best Hide, Best Camouflage, Funniest Hide, Best Beginner Hide, Impossible Hide
-- **Difficulties**: Easy, Medium, Hard, Impossible
-- **Maps**: Map 1, Map 2, Map 3 (configurable in `lib/utils.ts`)
-
----
-
-## Customizing Maps
-
-Edit `lib/utils.ts`:
-
-```ts
-export const MAPS = ['Map 1', 'Map 2', 'Map 3'] as const
-```
-
-Replace with your actual map names and rebuild.
+| `awards` | Weekly awards assigned manually |
 
 ---
 

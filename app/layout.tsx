@@ -1,44 +1,37 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import './globals.css'
-import { Providers } from './providers'
-import { Navbar } from '@/components/Navbar'
-import { Footer } from '@/components/Footer'
-
-const inter = Inter({ subsets: ['latin'] })
+import type { Metadata } from "next";
+import "./globals.css";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import SessionProvider from "@/components/SessionProvider";
+import { getSession } from "@/lib/auth";
 
 export const metadata: Metadata = {
-  title: 'MeccaHub — Meccha Chameleon Community Rankings',
+  title: "MeccaHub — Meccha Chameleon Community Rankings",
   description:
-    'The ultimate community hub for Meccha Chameleon. Submit your best hides, vote on favorites, and compete for weekly rankings.',
-  keywords: ['Meccha Chameleon', 'MeccaHub', 'hide ranking', 'community', 'gaming'],
+    "The community ranking hub for Meccha Chameleon. Discover, share, and vote on the best hides.",
   openGraph: {
-    title: 'MeccaHub — Meccha Chameleon Community Rankings',
-    description: 'Submit, vote, and rank the best hides in Meccha Chameleon.',
-    siteName: 'MeccaHub',
-    type: 'website',
+    title: "MeccaHub",
+    description: "Meccha Chameleon community rankings and hide database.",
+    siteName: "MeccaHub",
   },
-  icons: {
-    icon: '/favicon.ico',
-  },
-}
+};
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
+  const session = await getSession();
+
   return (
     <html lang="en" className="dark">
-      <body className={inter.className}>
-        <Providers>
-          <div className="min-h-screen flex flex-col">
-            <Navbar />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
-        </Providers>
+      <body className="bg-[#0a0a12] text-gray-100 antialiased flex flex-col min-h-screen">
+        <SessionProvider session={session}>
+          <Navbar />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </SessionProvider>
       </body>
     </html>
-  )
+  );
 }

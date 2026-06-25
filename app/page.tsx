@@ -1,236 +1,223 @@
-import Link from 'next/link'
-import Image from 'next/image'
-import { supabase } from '@/lib/supabase'
-import { HideCard } from '@/components/HideCard'
-import { Hide } from '@/types'
-import { getCurrentWeek, CATEGORY_COLORS, timeAgo } from '@/lib/utils'
+import Link from "next/link";
+import { Trophy, Clock, ArrowRight, Flame, User as UserIcon } from "lucide-react";
+import Image from "next/image";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import HideCard from "@/components/HideCard";
+import { Hide } from "@/types";
 
-async function getHomeData() {
-  const { week, year } = getCurrentWeek()
-
-  const [hideOfWeekRes, topWeeklyRes, recentRes] = await Promise.all([
-    supabase
-      .from('awards')
-      .select('*, hides(*, users(*))')
-      .eq('award_type', 'hide_of_week')
-      .eq('week', week)
-      .eq('year', year)
-      .single(),
-    supabase
-      .from('hides')
-      .select('*, users(*)')
-      .gte('created_at', getWeekStart())
-      .order('votes', { ascending: false })
-      .limit(5),
-    supabase
-      .from('hides')
-      .select('*, users(*)')
-      .order('created_at', { ascending: false })
-      .limit(6),
-  ])
-
-  return {
-    hideOfWeek: hideOfWeekRes.data?.hides as Hide | null,
-    topWeekly: (topWeeklyRes.data || []) as Hide[],
-    recent: (recentRes.data || []) as Hide[],
-  }
-}
-
-function getWeekStart(): string {
-  const now = new Date()
-  const day = now.getDay()
-  const diff = now.getDate() - day + (day === 0 ? -6 : 1)
-  const monday = new Date(now.setDate(diff))
-  monday.setHours(0, 0, 0, 0)
-  return monday.toISOString()
-}
+export const revalidate = 60;
 
 export default async function HomePage() {
-  const { hideOfWeek, topWeekly, recent } = await getHomeData()
+  const supabase = createServerSupabaseClient();
+
+  const monday = new Date();
+  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+  monday.setHours(0, 0, 0, 0);
+
+  const [
+    { data: awardData },
+    { data: topHides },
+    { data: recentHides },
+    { data: weeklyVoteRows },
+  ] = await Promise.all([
+    supabase
+      .from("awards")
+      .select("*, hides(*, users(*))")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single(),
+
+    supabase
+      .from("hides")
+      .select("*, users(*)")
+      .gte("created_at", monday.toISOString())
+      .order("votes", { ascending: false })
+      .limit(5),
+
+    supabase
+      .from("hides")
+      .select("*, users(*)")
+      .order("created_at", { ascending: false })
+      .limit(6),
+
+    // Votes cast this week — used to determine best player
+    supabase
+      .from("votes")
+      .select("hide_id, hides(user_id, users(id, username, avatar_url))")
+      .gte("created_at", monday.toISOString()),
+  ]);
+
+  const hideOfWeek = awardData?.hides as Hide | undefined;
+
+  // Compute best player of the week from weekly votes
+  type PlayerInfo = { id: string; username: string; avatar_url: string; count: number };
+
+  const bestPlayer = ((): PlayerInfo | null => {
+    if (!weeklyVoteRows || weeklyVoteRows.length === 0) return null;
+    const counts: Record<string, PlayerInfo> = {};
+    for (const row of weeklyVoteRows) {
+      const hide = row.hides as unknown as { user_id: string; users?: { id: string; username: string; avatar_url: string } } | null;
+      if (!hide?.users) continue;
+      const u = hide.users;
+      counts[u.id] = counts[u.id]
+        ? { ...counts[u.id], count: counts[u.id].count + 1 }
+        : { id: u.id, username: u.username, avatar_url: u.avatar_url, count: 1 };
+    }
+    return Object.values(counts).reduce<PlayerInfo | null>(
+      (best, p) => (!best || p.count > best.count ? p : best),
+      null
+    );
+  })();
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+    <div className="min-h-screen">
       {/* Hero */}
-      <section className="text-center py-12 relative">
-        <div className="absolute inset-0 bg-gradient-radial from-brand-500/10 via-transparent to-transparent pointer-events-none" />
-        <div className="relative">
-          <div className="inline-flex items-center gap-2 bg-brand-500/10 border border-brand-500/20 rounded-full px-4 py-1.5 text-brand-400 text-sm font-medium mb-6">
-            <span className="w-2 h-2 bg-brand-400 rounded-full animate-pulse" />
-            Community Rankings — Live
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-green-950/20 via-transparent to-purple-950/10 pointer-events-none" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+          <div className="inline-flex items-center gap-2 bg-green-400/10 border border-green-400/20 rounded-full px-4 py-1.5 text-green-400 text-sm font-medium mb-6">
+            <Flame size={14} />
+            Community Rankings Live
           </div>
-          <h1 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tight">
-            Mecca<span className="text-brand-400">Hub</span>
+          <h1 className="text-5xl md:text-7xl font-black text-white mb-4 tracking-tight">
+            MECCA<span className="text-green-400">HUB</span>
           </h1>
-          <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto mb-8">
-            The ultimate community hub for <span className="text-white font-semibold">Meccha Chameleon</span>.
-            Submit your best hides, vote on favorites, and claim the top spot.
+          <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-8">
+            The community ranking hub for{" "}
+            <span className="text-white font-semibold">Meccha Chameleon</span>.
+            Discover, share, and vote on the best hides.
           </p>
-          <div className="flex items-center justify-center gap-4 flex-wrap">
-            <Link href="/submit" className="btn-primary text-sm px-6 py-3">
+          <div className="flex flex-wrap gap-4 justify-center">
+            <Link
+              href="/browse"
+              className="bg-green-500 hover:bg-green-400 text-black font-bold px-8 py-3 rounded-lg transition-colors text-sm"
+            >
+              Browse Hides
+            </Link>
+            <Link
+              href="/rankings"
+              className="bg-[#131320] hover:bg-[#1a1a2e] text-white font-medium px-8 py-3 rounded-lg transition-colors border border-gray-700 text-sm"
+            >
+              View Rankings
+            </Link>
+            <Link
+              href="/submit"
+              className="bg-[#131320] hover:bg-[#1a1a2e] text-green-400 font-medium px-8 py-3 rounded-lg transition-colors border border-green-900/50 text-sm"
+            >
               Submit a Hide
             </Link>
-            <Link href="/browse" className="btn-secondary text-sm px-6 py-3">
-              Browse All Hides
-            </Link>
           </div>
-        </div>
-      </section>
-
-      {/* Hide of the Week */}
-      {hideOfWeek ? (
-        <section>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 bg-yellow-400/10 border border-yellow-400/20 rounded-lg flex items-center justify-center">
-              <span className="text-yellow-400 text-lg">🏆</span>
-            </div>
-            <h2 className="text-2xl font-bold text-white">Hide of the Week</h2>
-          </div>
-          <Link href={`/hide/${hideOfWeek.id}`} className="block">
-            <div className="card p-0 overflow-hidden hover:border-yellow-400/50 transition-all duration-300 group">
-              <div className="relative h-64 md:h-96 w-full bg-dark-700">
-                {hideOfWeek.screenshot_url && (
-                  <Image
-                    src={hideOfWeek.screenshot_url}
-                    alt={hideOfWeek.title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    priority
-                  />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-dark-900 via-dark-900/20 to-transparent" />
-                <div className="absolute top-4 left-4">
-                  <span className="badge bg-yellow-400/20 text-yellow-400 border border-yellow-400/30 text-sm px-3 py-1">
-                    🏆 Hide of the Week
-                  </span>
-                </div>
-                <div className="absolute bottom-4 left-4 right-4">
-                  <h3 className="text-white text-2xl font-bold mb-2">{hideOfWeek.title}</h3>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span className={`badge ${CATEGORY_COLORS[hideOfWeek.category]}`}>
-                      {hideOfWeek.category}
-                    </span>
-                    <span className="text-gray-400 text-sm">{hideOfWeek.map}</span>
-                    {hideOfWeek.users && (
-                      <span className="text-gray-400 text-sm">by {hideOfWeek.users.username}</span>
-                    )}
-                    <div className="flex items-center gap-1 text-brand-400 ml-auto">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
-                      </svg>
-                      <span className="text-white font-bold">{hideOfWeek.votes}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Link>
-        </section>
-      ) : (
-        <section>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 bg-yellow-400/10 border border-yellow-400/20 rounded-lg flex items-center justify-center">
-              <span className="text-yellow-400 text-lg">🏆</span>
-            </div>
-            <h2 className="text-2xl font-bold text-white">Hide of the Week</h2>
-          </div>
-          <div className="card p-12 text-center text-gray-500">
-            <p className="text-lg mb-2">No hide selected this week yet.</p>
-            <p className="text-sm">Check back later or <Link href="/submit" className="text-brand-400 hover:underline">submit your hide</Link>!</p>
-          </div>
-        </section>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Top 5 This Week */}
-        <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-white">Top 5 This Week</h2>
-            <Link href="/rankings" className="text-sm text-brand-400 hover:text-brand-300 transition-colors">
-              View all →
-            </Link>
-          </div>
-          {topWeekly.length > 0 ? (
-            <div className="space-y-2">
-              {topWeekly.map((hide, i) => (
-                <HideCard key={hide.id} hide={hide} rank={i + 1} />
-              ))}
-            </div>
-          ) : (
-            <div className="card p-8 text-center text-gray-500">
-              <p>No hides submitted this week yet.</p>
-              <Link href="/submit" className="text-brand-400 hover:underline text-sm mt-2 block">
-                Be the first to submit!
-              </Link>
-            </div>
-          )}
-        </div>
-
-        {/* Recent Submissions */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-white">Recent Submissions</h2>
-            <Link href="/browse" className="text-sm text-brand-400 hover:text-brand-300 transition-colors">
-              Browse all →
-            </Link>
-          </div>
-          {recent.length > 0 ? (
-            <div className="space-y-2">
-              {recent.map((hide) => (
-                <Link key={hide.id} href={`/hide/${hide.id}`} className="hide-card block group">
-                  <div className="flex gap-3 items-center">
-                    <div className="relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-dark-700">
-                      {hide.screenshot_url ? (
-                        <Image
-                          src={hide.screenshot_url}
-                          alt={hide.title}
-                          fill
-                          className="object-cover"
-                          sizes="48px"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-600">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-medium truncate group-hover:text-brand-400 transition-colors">
-                        {hide.title}
-                      </p>
-                      <p className="text-gray-500 text-xs">{timeAgo(hide.created_at)}</p>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="card p-6 text-center text-gray-500 text-sm">
-              No submissions yet.
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Stats banner */}
-      <section className="card p-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          <StatItem label="Total Hides" value="—" />
-          <StatItem label="Active Players" value="—" />
-          <StatItem label="Votes Cast" value="—" />
-          <StatItem label="This Week" value="—" />
-        </div>
-      </section>
-    </div>
-  )
-}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 space-y-16">
+        {/* Hide of the Week */}
+        {hideOfWeek && (
+          <section>
+            <div className="flex items-center gap-3 mb-6">
+              <Trophy className="text-yellow-400 w-6 h-6" />
+              <h2 className="text-2xl font-bold text-white">Hide of the Week</h2>
+              <span className="bg-yellow-400/10 text-yellow-400 border border-yellow-400/20 text-xs px-2 py-0.5 rounded-full font-medium">
+                Featured
+              </span>
+            </div>
+            <div className="max-w-md">
+              <HideCard hide={hideOfWeek} featured />
+            </div>
+          </section>
+        )}
 
-function StatItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="text-2xl font-black text-brand-400">{value}</div>
-      <div className="text-xs text-gray-500 mt-1">{label}</div>
+        {/* Best Player of the Week */}
+        {bestPlayer !== null && (
+          <section>
+            <div className="flex items-center gap-3 mb-6">
+              <UserIcon className="text-green-400 w-6 h-6" />
+              <h2 className="text-2xl font-bold text-white">Best Player This Week</h2>
+              <span className="bg-green-400/10 text-green-400 border border-green-400/20 text-xs px-2 py-0.5 rounded-full font-medium">
+                Live
+              </span>
+            </div>
+            <Link
+              href={`/profile/${bestPlayer.id}`}
+              className="inline-flex items-center gap-4 bg-[#131320] border border-gray-800 hover:border-green-900/50 rounded-xl px-5 py-4 group transition-colors"
+            >
+              <Image
+                src={bestPlayer.avatar_url ?? "/default-avatar.png"}
+                alt={bestPlayer.username}
+                width={52}
+                height={52}
+                className="rounded-full border-2 border-green-500/40 shrink-0"
+              />
+              <div>
+                <p className="text-white font-bold text-base group-hover:text-green-400 transition-colors">
+                  {bestPlayer.username}
+                </p>
+                <p className="text-sm text-gray-500">
+                  <span className="text-green-400 font-semibold">{bestPlayer.count}</span> votes earned this week
+                </p>
+              </div>
+              <ArrowRight className="ml-2 text-gray-700 group-hover:text-green-400 transition-colors" size={18} />
+            </Link>
+          </section>
+        )}
+
+        {/* Top 5 this week */}
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Trophy className="text-green-400 w-5 h-5" />
+              <h2 className="text-2xl font-bold text-white">Top Hides This Week</h2>
+            </div>
+            <Link
+              href="/rankings"
+              className="text-green-400 hover:text-green-300 text-sm flex items-center gap-1 transition-colors"
+            >
+              Full rankings <ArrowRight size={14} />
+            </Link>
+          </div>
+          {topHides && topHides.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {topHides.map((hide, i) => (
+                <HideCard key={hide.id} hide={hide as Hide} rank={i + 1} />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-[#131320] border border-gray-800 rounded-xl p-12 text-center">
+              <p className="text-gray-500">No hides submitted this week yet.</p>
+              <Link href="/submit" className="text-green-400 hover:text-green-300 text-sm mt-2 inline-block">
+                Submit the first one →
+              </Link>
+            </div>
+          )}
+        </section>
+
+        {/* Recent Submissions */}
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Clock className="text-gray-400 w-5 h-5" />
+              <h2 className="text-2xl font-bold text-white">Recent Submissions</h2>
+            </div>
+            <Link
+              href="/browse"
+              className="text-green-400 hover:text-green-300 text-sm flex items-center gap-1 transition-colors"
+            >
+              Browse all <ArrowRight size={14} />
+            </Link>
+          </div>
+          {recentHides && recentHides.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {recentHides.map((hide) => (
+                <HideCard key={hide.id} hide={hide as Hide} />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-[#131320] border border-gray-800 rounded-xl p-12 text-center">
+              <p className="text-gray-500">No hides yet. Be the first to submit!</p>
+            </div>
+          )}
+        </section>
+      </div>
     </div>
-  )
+  );
 }

@@ -7,3 +7,5 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  NPM_FLAGS = "--legacy-peer-deps"
+  NEXTAUTH_URL = "https://mecchachameleonhub.com"
