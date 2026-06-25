@@ -2,6 +2,15 @@ import { NextAuthOptions, getServerSession } from "next-auth";
 import SteamProvider from "./steam-provider";
 import { createServerSupabaseClient } from "./supabase-server";
 
+// Ensure NextAuth never sees an http:// base URL — Netlify can inject http://
+// into NEXTAUTH_URL even when the site runs on HTTPS.
+if (process.env.NEXTAUTH_URL) {
+  process.env.NEXTAUTH_URL = process.env.NEXTAUTH_URL.replace(
+    /^http:\/\//,
+    "https://"
+  );
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [SteamProvider()],
   callbacks: {

@@ -10,7 +10,15 @@ export interface SteamProfile extends Record<string, unknown> {
   avatarfull: string;
 }
 
+// Force HTTPS on the base URL regardless of how NEXTAUTH_URL is set in the
+// deployment environment — Steam will reject http:// return_to URLs.
+function siteUrl(): string {
+  const raw = process.env.NEXTAUTH_URL ?? "https://mecchachameleonhub.com";
+  return raw.replace(/^http:\/\//, "https://");
+}
+
 export default function SteamProvider(): OAuthConfig<SteamProfile> {
+  const base = siteUrl();
   return {
     id: "steam",
     name: "Steam",
@@ -25,8 +33,8 @@ export default function SteamProvider(): OAuthConfig<SteamProfile> {
       params: {
         "openid.ns": "http://specs.openid.net/auth/2.0",
         "openid.mode": "checkid_setup",
-        "openid.return_to": `${process.env.NEXTAUTH_URL}/api/auth/callback/steam`,
-        "openid.realm": process.env.NEXTAUTH_URL ?? "",
+        "openid.return_to": `${base}/api/auth/callback/steam`,
+        "openid.realm": base,
         "openid.identity": "http://specs.openid.net/auth/2.0/identifier_select",
         "openid.claimed_id": "http://specs.openid.net/auth/2.0/identifier_select",
       },
