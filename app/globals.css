@@ -3,17 +3,97 @@
 @tailwind utilities;
 
 :root {
-  --background: #0a0a12;
-  --foreground: #f1f5f9;
+  --bg:        #070710;
+  --surface:   #0f0f1e;
+  --surface-2: #161628;
+  --green:     #4ade80;
+  --teal:      #2dd4bf;
+  --purple:    #a78bfa;
 }
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
+  background-color: var(--bg);
+  color: #f1f5f9;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #0a0a12; }
-::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #4ade80; }
+/* ── Scrollbar ── */
+::-webkit-scrollbar       { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: #1e1e38; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--green); }
+
+/* ── Gradient text utility ── */
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(135deg, #4ade80, #2dd4bf);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .text-gradient-purple {
+    background: linear-gradient(135deg, #a78bfa, #818cf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+/* ── Glass card ── */
+@layer components {
+  .glass-card {
+    @apply bg-surface/80 backdrop-blur-sm border border-white/5 rounded-xl
+           transition-all duration-200;
+  }
+  .glass-card:hover {
+    @apply border-green-400/20 shadow-glow-card;
+  }
+
+  .btn-primary {
+    @apply relative inline-flex items-center gap-2 font-bold text-sm px-6 py-2.5
+           rounded-lg text-black transition-all duration-200 select-none;
+    background: linear-gradient(135deg, #4ade80, #2dd4bf);
+  }
+  .btn-primary:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 0 24px rgba(74,222,128,0.4);
+  }
+  .btn-primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    filter: none;
+    box-shadow: none;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 font-medium text-sm px-6 py-2.5
+           rounded-lg border border-white/10 bg-surface text-gray-300
+           hover:border-green-400/30 hover:text-white transition-all duration-200;
+  }
+}
+
+/* ── Hero animated gradient bg ── */
+.hero-bg {
+  background: linear-gradient(
+    -45deg,
+    #070710,
+    #0a1a10,
+    #0d0720,
+    #071018
+  );
+  background-size: 400% 400%;
+  animation: gradient-shift 12s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
+
+/* ── Glow orbs for hero ── */
+.hero-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.12;
+  pointer-events: none;
+}
