@@ -3,14 +3,14 @@ import { createServerSupabaseClient } from "@/lib/supabase-server";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { hideId: string } }
+  { params }: { params: { id: string } }
 ) {
   const supabase = createServerSupabaseClient();
 
   const { data, error } = await supabase
     .from("hides")
     .select("*, users(*)")
-    .eq("id", params.hideId)
+    .eq("id", params.id)
     .single();
 
   if (error || !data) {
