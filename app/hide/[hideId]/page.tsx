@@ -12,7 +12,7 @@ import ReportButton from "@/components/ReportButton";
 import ScreenshotLightbox from "@/components/ScreenshotLightbox";
 import clsx from "clsx";
 
-export const revalidate = 30;
+export const dynamic = "force-dynamic";
 
 export default async function HidePage({
   params,
@@ -37,6 +37,8 @@ export default async function HidePage({
   ]);
 
   if (!hide) notFound();
+
+  console.log("[HidePage] session.user.id:", session?.user?.id ?? "(no session)", "| hide.user_id:", hide.user_id, "| match:", session?.user?.id === hide.user_id);
 
   // Check if current user voted today
   let hasVoted = false;
