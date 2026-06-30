@@ -12,8 +12,8 @@ import { MAPS } from "@/lib/utils";
 export default function EditHidePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const params = useParams<{ hideId: string }>();
-  const hideId = params.hideId;
+  const params = useParams<{ id: string }>();
+  const hideId = params.id;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [pageLoading, setPageLoading] = useState(true);
@@ -47,7 +47,8 @@ export default function EditHidePage() {
       .then((data) => {
         if (!data.hide) { setNotFound(true); return; }
         const h = data.hide;
-        if (h.user_id !== session.user.id) { setForbidden(true); return; }
+        const currentUserId = session.user.supabaseUserId || session.user.id;
+        if (h.user_id !== currentUserId) { setForbidden(true); return; }
         setForm({
           title: h.title ?? "",
           description: h.description ?? "",
