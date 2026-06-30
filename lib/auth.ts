@@ -80,8 +80,21 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.steamId = user.id;                    // SteamID64
+        token.steamId = user.id;       // SteamID64
         token.userId  = user.userId ?? "";
+      }
+      // Backfill userId for sessions created before it was added to the token
+      if (!token.userId && token.steamId) {
+        const supabase = createServerSupabaseClient();
+        const { data } = await supabase
+          .from("users")
+          .select("id")
+          .eq("steam_id", token.steamId as string)
+          .maybeSingle();
+        if (data?.id) {
+          token.userId = data.id;
+          console.log("[auth] backfilled token.userId:", token.userId, "for steamId:", token.steamId);
+        }
       }
       return token;
     },

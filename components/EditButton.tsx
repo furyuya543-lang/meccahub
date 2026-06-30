@@ -13,16 +13,17 @@ export default function EditButton({
 }) {
   const { data: session } = useSession();
 
-  console.log(
-    "[EditButton] session.user.supabaseUserId:",
-    session?.user?.supabaseUserId ?? "(no session)",
-    "| hide.user_id:",
-    hideUserId,
-    "| match:",
-    session?.user?.supabaseUserId === hideUserId
-  );
+  // Log the full session.user so we can see exactly what fields exist
+  console.log("[EditButton] session.user:", JSON.stringify(session?.user ?? null));
+  console.log("[EditButton] hide.user_id:", hideUserId);
+  console.log("[EditButton] session.user.supabaseUserId:", session?.user?.supabaseUserId);
+  console.log("[EditButton] session.user.id:", session?.user?.id);
 
-  if (!session || session.user.supabaseUserId !== hideUserId) return null;
+  // Try supabaseUserId first, fall back to id
+  const currentUserId = session?.user?.supabaseUserId || session?.user?.id;
+  console.log("[EditButton] currentUserId used for comparison:", currentUserId, "| match:", currentUserId === hideUserId);
+
+  if (!session || currentUserId !== hideUserId) return null;
 
   return (
     <Link
