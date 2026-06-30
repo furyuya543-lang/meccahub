@@ -42,10 +42,11 @@ export default function EditHidePage() {
       return;
     }
 
+    console.log("[EditPage] fetching hide id:", hideId);
     fetch(`/api/hides/${hideId}`)
       .then((r) => r.json())
       .then((data) => {
-        if (!data.hide) { setNotFound(true); return; }
+        if (!data.hide) { console.log("[EditPage] hide not found for id:", hideId); setNotFound(true); return; }
         const h = data.hide;
         const currentUserId = session.user.supabaseUserId || session.user.id;
         if (h.user_id !== currentUserId) { setForbidden(true); return; }
@@ -110,6 +111,7 @@ export default function EditHidePage() {
       screenshotUrl = uploadData.url;
     }
 
+    console.log("[EditPage] saving hide id:", hideId, "redirect will go to: /hide/" + hideId);
     setSaving(true);
     const res = await fetch(`/api/hides/${hideId}`, {
       method: "PATCH",

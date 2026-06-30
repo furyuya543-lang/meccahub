@@ -23,7 +23,7 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { hideId: string } }
+  { params }: { params: { id: string } }
 ) {
   const session = await getSession();
   if (!session) {
@@ -31,18 +31,23 @@ export async function PATCH(
   }
 
   const supabase = createServerSupabaseClient();
+  const sessionUserId = session.user.supabaseUserId || session.user.id;
+
+  console.log("[PATCH /api/hides] params.id:", params.id, "| session userId:", sessionUserId);
 
   const { data: existing, error: fetchError } = await supabase
     .from("hides")
     .select("user_id")
-    .eq("id", params.hideId)
+    .eq("id", params.id)
     .single();
 
   if (fetchError || !existing) {
+    console.log("[PATCH /api/hides] hide not found for id:", params.id);
     return NextResponse.json({ error: "Hide not found" }, { status: 404 });
   }
 
-  if (existing.user_id !== session.user.id) {
+  if (existing.user_id !== sessionUserId) {
+    console.log("[PATCH /api/hides] forbidden — hide.user_id:", existing.user_id, "!== session:", sessionUserId);
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -63,7 +68,7 @@ export async function PATCH(
       screenshot_url,
       video_url: video_url || null,
     })
-    .eq("id", params.hideId)
+    .eq("id", params.id)
     .select("*")
     .single();
 
@@ -71,5 +76,6 @@ export async function PATCH(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  console.log("[PATCH /api/hides] updated hide:", data.id);
   return NextResponse.json({ hide: data });
 }
