@@ -11,23 +11,23 @@ export const revalidate = 60;
 export default async function ProfilePage({
   params,
 }: {
-  params: { userId: string };
+  params: { id: string };
 }) {
   const supabase = createServerSupabaseClient();
 
   const [{ data: user }, { data: hides }, { data: awards }] = await Promise.all([
-    supabase.from("users").select("*").eq("id", params.userId).single(),
+    supabase.from("users").select("*").eq("id", params.id).single(),
 
     supabase
       .from("hides")
       .select("*, users(*)")
-      .eq("user_id", params.userId)
+      .eq("user_id", params.id)
       .order("votes", { ascending: false }),
 
     supabase
       .from("awards")
       .select("*, hides(*, users(*))")
-      .eq("user_id", params.userId)
+      .eq("user_id", params.id)
       .order("year", { ascending: false })
       .order("week", { ascending: false }),
   ]);

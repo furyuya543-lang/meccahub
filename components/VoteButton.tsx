@@ -11,11 +11,7 @@ interface VoteButtonProps {
   hasVoted: boolean;
 }
 
-export default function VoteButton({
-  hideId,
-  initialVotes,
-  hasVoted: initialHasVoted,
-}: VoteButtonProps) {
+export default function VoteButton({ hideId, initialVotes, hasVoted: initialHasVoted }: VoteButtonProps) {
   const { data: session } = useSession();
   const [votes, setVotes] = useState(initialVotes);
   const [hasVoted, setHasVoted] = useState(initialHasVoted);
@@ -26,28 +22,20 @@ export default function VoteButton({
       window.location.href = `/api/steam?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
       return;
     }
-
     if (loading) return;
     setLoading(true);
-
-    const method = hasVoted ? "DELETE" : "POST";
-
     try {
       const res = await fetch("/api/votes", {
-        method,
+        method: hasVoted ? "DELETE" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ hideId }),
       });
-
       if (res.ok) {
         setVotes((v) => (hasVoted ? v - 1 : v + 1));
         setHasVoted(!hasVoted);
       }
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false);
-    }
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
   }
 
   return (
@@ -55,10 +43,10 @@ export default function VoteButton({
       onClick={handleVote}
       disabled={loading}
       className={clsx(
-        "flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all",
+        "flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 select-none",
         hasVoted
-          ? "bg-green-500 text-black hover:bg-green-400"
-          : "bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700"
+          ? "btn-primary"
+          : "bg-surface border border-white/10 text-gray-300 hover:border-green-400/30 hover:text-white"
       )}
     >
       <ThumbsUp size={16} className={hasVoted ? "fill-current" : ""} />

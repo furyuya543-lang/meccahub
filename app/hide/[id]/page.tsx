@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 export default async function HidePage({
   params,
 }: {
-  params: { hideId: string };
+  params: { id: string };
 }) {
   const supabase = createServerSupabaseClient();
   const session = await getSession();
@@ -27,13 +27,13 @@ export default async function HidePage({
     supabase
       .from("hides")
       .select("*, users(*)")
-      .eq("id", params.hideId)
+      .eq("id", params.id)
       .single(),
 
     supabase
       .from("comments")
       .select("*, users(*)")
-      .eq("hide_id", params.hideId)
+      .eq("hide_id", params.id)
       .order("created_at", { ascending: false }),
   ]);
 
@@ -49,7 +49,7 @@ export default async function HidePage({
       .from("votes")
       .select("id")
       .eq("user_id", session.user.id)
-      .eq("hide_id", params.hideId)
+      .eq("hide_id", params.id)
       .gte("created_at", `${today}T00:00:00Z`)
       .lte("created_at", `${today}T23:59:59Z`)
       .single();

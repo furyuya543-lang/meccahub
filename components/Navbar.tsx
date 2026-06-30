@@ -12,7 +12,6 @@ export default function Navbar() {
   const [submitOpen, setSubmitOpen] = useState(false);
   const submitRef = useRef<HTMLDivElement>(null);
 
-  // Close submit dropdown when clicking outside
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (submitRef.current && !submitRef.current.contains(e.target as Node)) {
@@ -24,36 +23,38 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav className="bg-[#0d0d1a] border-b border-green-900/30 sticky top-0 z-50">
+    <nav className="sticky top-0 z-50 bg-black/60 backdrop-blur-xl border-b border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            <span className="text-green-400 font-black text-xl tracking-widest">
-              MECCA<span className="text-white">HUB</span>
+
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2 shrink-0 group">
+            <span className="font-black text-base tracking-tight leading-none">
+              <span className="text-white">MECCHA CHAMELEON</span>
+              <span className="text-gradient ml-1">HUB</span>
             </span>
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-6">
-            <NavLink href="/" icon={<Home size={15} />} label="Home" />
-            <NavLink href="/browse" icon={<Search size={15} />} label="Browse" />
-            <NavLink href="/rankings" icon={<Trophy size={15} />} label="Rankings" />
-            <NavLink href="/archives" icon={<ArchiveIcon size={15} />} label="Archives" />
-            <NavLink href="/maps" icon={<MapPin size={15} />} label="Maps" />
+          <div className="hidden md:flex items-center gap-5">
+            <NavLink href="/"         icon={<Home size={14} />}        label="Home" />
+            <NavLink href="/browse"   icon={<Search size={14} />}      label="Browse" />
+            <NavLink href="/rankings" icon={<Trophy size={14} />}      label="Rankings" />
+            <NavLink href="/archives" icon={<ArchiveIcon size={14} />} label="Archives" />
+            <NavLink href="/maps"     icon={<MapPin size={14} />}      label="Maps" />
 
-            {/* Submit dropdown — always visible */}
             <div ref={submitRef} className="relative">
               <button
                 onClick={() => setSubmitOpen((o) => !o)}
-                className="flex items-center gap-1.5 bg-green-500 hover:bg-green-400 text-black font-semibold px-3 py-1.5 rounded-lg text-sm transition-colors"
+                className="btn-primary text-xs px-4 py-2"
               >
-                <Upload size={14} />
+                <Upload size={13} />
                 Submit
-                <ChevronDown size={13} className={`transition-transform ${submitOpen ? "rotate-180" : ""}`} />
+                <ChevronDown size={12} className={`transition-transform ${submitOpen ? "rotate-180" : ""}`} />
               </button>
 
               {submitOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-[#131320] border border-gray-700 rounded-xl shadow-xl overflow-hidden">
+                <div className="absolute right-0 top-full mt-2 w-52 bg-surface border border-white/10 rounded-xl shadow-2xl overflow-hidden">
                   <SubmitOption
                     href="/submit"
                     icon={<Upload size={14} />}
@@ -87,15 +88,15 @@ export default function Navbar() {
                     alt={session.user.name ?? "User"}
                     width={32}
                     height={32}
-                    className="rounded-full border border-green-500/40"
+                    className="rounded-full border border-green-400/30"
                   />
-                  <span className="text-sm text-gray-300 hidden md:block max-w-[120px] truncate">
+                  <span className="text-sm text-gray-300 hidden md:block max-w-[110px] truncate">
                     {session.user.name}
                   </span>
                 </Link>
                 <button
                   onClick={() => signOut()}
-                  className="text-xs text-gray-500 hover:text-gray-300 transition-colors px-2 py-1"
+                  className="text-xs text-gray-600 hover:text-gray-300 transition-colors px-2 py-1"
                 >
                   Sign out
                 </button>
@@ -103,7 +104,7 @@ export default function Navbar() {
             ) : (
               <button
                 onClick={() => { window.location.href = `/api/steam?callbackUrl=${encodeURIComponent(window.location.pathname)}`; }}
-                className="flex items-center gap-2 bg-[#1b2838] hover:bg-[#213347] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-[#2a475e]"
+                className="flex items-center gap-2 bg-surface border border-white/10 hover:border-green-400/30 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
               >
                 <SteamIcon />
                 Sign in with Steam
@@ -121,15 +122,15 @@ export default function Navbar() {
 
         {/* Mobile menu */}
         {mobileOpen && (
-          <div className="md:hidden py-3 border-t border-gray-800 flex flex-col gap-1">
-            <NavLink href="/" icon={<Home size={15} />} label="Home" mobile />
-            <NavLink href="/browse" icon={<Search size={15} />} label="Browse" mobile />
-            <NavLink href="/rankings" icon={<Trophy size={15} />} label="Rankings" mobile />
-            <NavLink href="/archives" icon={<ArchiveIcon size={15} />} label="Archives" mobile />
-            <NavLink href="/maps" icon={<MapPin size={15} />} label="Maps" mobile />
-            <div className="border-t border-gray-800/60 mt-1 pt-1">
-              <NavLink href="/submit" icon={<Upload size={15} />} label="Submit a Hide" mobile />
-              <NavLink href="/submit-map" icon={<Map size={15} />} label="Submit a Map" mobile />
+          <div className="md:hidden py-3 border-t border-white/5 flex flex-col gap-0.5">
+            <NavLink href="/"          icon={<Home size={14} />}        label="Home"       mobile />
+            <NavLink href="/browse"    icon={<Search size={14} />}      label="Browse"     mobile />
+            <NavLink href="/rankings"  icon={<Trophy size={14} />}      label="Rankings"   mobile />
+            <NavLink href="/archives"  icon={<ArchiveIcon size={14} />} label="Archives"   mobile />
+            <NavLink href="/maps"      icon={<MapPin size={14} />}      label="Maps"       mobile />
+            <div className="border-t border-white/5 mt-1 pt-1">
+              <NavLink href="/submit"     icon={<Upload size={14} />} label="Submit a Hide" mobile />
+              <NavLink href="/submit-map" icon={<Map size={14} />}    label="Submit a Map"  mobile />
             </div>
           </div>
         )}
@@ -139,19 +140,10 @@ export default function Navbar() {
 }
 
 function SubmitOption({
-  href,
-  icon,
-  label,
-  desc,
-  session,
-  onClick,
+  href, icon, label, desc, session, onClick,
 }: {
-  href: string;
-  icon: React.ReactNode;
-  label: string;
-  desc: string;
-  session: boolean;
-  onClick: () => void;
+  href: string; icon: React.ReactNode; label: string;
+  desc: string; session: boolean; onClick: () => void;
 }) {
   const handleClick = (e: React.MouseEvent) => {
     if (!session) {
@@ -165,33 +157,25 @@ function SubmitOption({
     <Link
       href={href}
       onClick={handleClick}
-      className="flex items-start gap-3 px-4 py-3 hover:bg-gray-800/60 transition-colors group"
+      className="flex items-start gap-3 px-4 py-3 hover:bg-surface-2 transition-colors group"
     >
       <span className="text-green-400 mt-0.5 shrink-0">{icon}</span>
       <div>
-        <p className="text-white text-sm font-medium group-hover:text-green-400 transition-colors">{label}</p>
+        <p className="text-white text-sm font-medium group-hover:text-gradient transition-colors">{label}</p>
         <p className="text-gray-500 text-xs">{desc}</p>
       </div>
     </Link>
   );
 }
 
-function NavLink({
-  href,
-  icon,
-  label,
-  mobile,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  label: string;
-  mobile?: boolean;
+function NavLink({ href, icon, label, mobile }: {
+  href: string; icon: React.ReactNode; label: string; mobile?: boolean;
 }) {
   return (
     <Link
       href={href}
-      className={`flex items-center gap-1.5 text-gray-400 hover:text-green-400 transition-colors text-sm font-medium ${
-        mobile ? "px-2 py-2" : ""
+      className={`flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors text-sm font-medium ${
+        mobile ? "px-2 py-2.5" : ""
       }`}
     >
       {icon}

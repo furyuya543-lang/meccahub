@@ -1,4 +1,4 @@
-# MeccaHub
+# MecchaChameleonHub
 
 Community ranking website for **Meccha Chameleon** — discover, share, and vote on the best hides.
 
