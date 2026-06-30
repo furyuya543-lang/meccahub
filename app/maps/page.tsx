@@ -41,7 +41,7 @@ export default async function MapsPage() {
             <h1 className="text-3xl font-black text-white">Community Maps</h1>
           </div>
           <p className="text-gray-500 text-sm">
-            Steam Workshop maps submitted and voted on by the community
+            Steam Workshop maps shared and voted on by the community
           </p>
         </div>
         <Link
@@ -49,7 +49,7 @@ export default async function MapsPage() {
           className="flex items-center gap-2 bg-green-500 hover:bg-green-400 text-black font-bold px-4 py-2.5 rounded-lg text-sm transition-colors shrink-0"
         >
           <Plus size={15} />
-          Submit Map
+          Share a Map
         </Link>
       </div>
 
@@ -59,14 +59,14 @@ export default async function MapsPage() {
           <MapPin className="w-12 h-12 text-gray-700 mx-auto mb-3" />
           <p className="text-gray-400 font-semibold mb-1">No maps yet</p>
           <p className="text-gray-600 text-sm mb-6">
-            Submit a Steam Workshop map to get it listed here.
+            Share a Steam Workshop map you found to get it listed here.
           </p>
           <Link
             href="/submit-map"
             className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-400 text-black font-bold px-5 py-2.5 rounded-lg text-sm transition-colors"
           >
             <Plus size={15} />
-            Submit a Map
+            Share a Map
           </Link>
         </div>
       ) : (
@@ -129,6 +129,7 @@ function MapCard({ map, hasVoted }: { map: MapWithUser; hasVoted: boolean }) {
                     className="rounded-full border border-gray-700 shrink-0"
                   />
                 )}
+                <span className="text-gray-600 shrink-0">Shared by</span>
                 <span className="truncate max-w-[80px]">{map.users.username}</span>
               </a>
             )}

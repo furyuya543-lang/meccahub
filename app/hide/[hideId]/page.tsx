@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Map, Tag, ExternalLink, Video } from "lucide-react";
+import { Map, Tag, ExternalLink, Video, Pencil } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Hide, Comment } from "@/types";
 import VoteButton from "@/components/VoteButton";
@@ -96,8 +96,17 @@ export default async function HidePage({
               </span>
             </Link>
           )}
-          <div className="mt-2">
+          <div className="mt-2 flex items-center gap-2">
             <ReportButton hideId={hide.id} />
+            {session?.user.id === hide.user_id && (
+              <Link
+                href={`/hide/${hide.id}/edit`}
+                className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 rounded-md px-2.5 py-1.5 transition-colors"
+              >
+                <Pencil size={12} />
+                Edit
+              </Link>
+            )}
           </div>
         </div>
 

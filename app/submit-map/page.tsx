@@ -52,9 +52,9 @@ export default function SubmitMapPage() {
   if (!session) {
     return (
       <div className="max-w-lg mx-auto px-4 py-20 text-center">
-        <h1 className="text-2xl font-black text-white mb-3">Submit a Map</h1>
+        <h1 className="text-2xl font-black text-white mb-3">Share a Map</h1>
         <p className="text-gray-500 mb-6 text-sm">
-          Sign in with Steam to submit a Workshop map for the community.
+          Sign in with Steam to share a Workshop map you&apos;ve found with the community.
         </p>
         <button
           onClick={() => { window.location.href = "/api/steam?callbackUrl=/submit-map"; }}
@@ -136,9 +136,9 @@ export default function SubmitMapPage() {
     return (
       <div className="max-w-lg mx-auto px-4 py-20 text-center">
         <CheckCircle className="w-14 h-14 text-green-400 mx-auto mb-4" />
-        <h1 className="text-2xl font-black text-white mb-2">Map Submitted!</h1>
+        <h1 className="text-2xl font-black text-white mb-2">Map Shared!</h1>
         <p className="text-gray-500 text-sm mb-6">
-          Your map is pending review and will appear on the Maps page once
+          This map is pending review and will appear on the Maps page once
           approved.
         </p>
         <div className="flex gap-3 justify-center">
@@ -158,7 +158,7 @@ export default function SubmitMapPage() {
             }}
             className="bg-[#131320] border border-gray-700 hover:border-gray-500 text-gray-300 px-5 py-2.5 rounded-lg text-sm transition-colors"
           >
-            Submit Another
+            Share Another
           </button>
         </div>
       </div>
@@ -175,10 +175,10 @@ export default function SubmitMapPage() {
         Back to Maps
       </Link>
 
-      <h1 className="text-3xl font-black text-white mb-1">Submit a Map</h1>
+      <h1 className="text-3xl font-black text-white mb-1">Share a Map</h1>
       <p className="text-gray-500 text-sm mb-8">
-        Paste your Steam Workshop URL to verify it&apos;s a Meccha Chameleon
-        map, then submit it to the community.
+        Found a great Meccha Chameleon map? Paste the Workshop URL to verify
+        it, then share it with the community.
       </p>
 
       <div className="space-y-6">
@@ -214,7 +214,7 @@ export default function SubmitMapPage() {
             </button>
           </div>
           <p className="text-xs text-gray-600 mt-1.5">
-            Find your map on{" "}
+            Browse maps on{" "}
             <a
               href="https://steamcommunity.com/workshop/browse/?appid=2440510"
               target="_blank"
@@ -315,7 +315,7 @@ export default function SubmitMapPage() {
               className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-bold py-3 rounded-lg text-sm transition-colors"
             >
               {submitting && <Loader2 size={15} className="animate-spin" />}
-              Submit Map for Review
+              Share Map for Review
             </button>
           </>
         )}
