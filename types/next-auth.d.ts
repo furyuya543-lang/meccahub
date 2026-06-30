@@ -7,6 +7,7 @@ declare module "next-auth" {
       name: string;
       image: string;
       steamId: string;
+      supabaseUserId: string;
     };
   }
 

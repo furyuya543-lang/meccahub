@@ -86,8 +86,9 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      session.user.id      = token.userId  as string;
-      session.user.steamId = token.steamId as string;
+      session.user.id             = token.userId  as string;
+      session.user.supabaseUserId = token.userId  as string;
+      session.user.steamId        = token.steamId as string;
       return session;
     },
   },

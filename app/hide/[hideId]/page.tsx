@@ -3,12 +3,13 @@ import { getSession } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Map, Tag, ExternalLink, Video, Pencil } from "lucide-react";
+import { Map, Tag, ExternalLink, Video } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Hide, Comment } from "@/types";
 import VoteButton from "@/components/VoteButton";
 import CommentSection from "@/components/CommentSection";
 import ReportButton from "@/components/ReportButton";
+import EditButton from "@/components/EditButton";
 import ScreenshotLightbox from "@/components/ScreenshotLightbox";
 import clsx from "clsx";
 
@@ -38,7 +39,7 @@ export default async function HidePage({
 
   if (!hide) notFound();
 
-  console.log("[HidePage] session.user.id:", session?.user?.id ?? "(no session)", "| hide.user_id:", hide.user_id, "| match:", session?.user?.id === hide.user_id);
+  console.log("[HidePage] session.user:", JSON.stringify(session?.user ?? null), "| hide.user_id:", hide.user_id);
 
   // Check if current user voted today
   let hasVoted = false;
@@ -100,15 +101,7 @@ export default async function HidePage({
           )}
           <div className="mt-2 flex items-center gap-2">
             <ReportButton hideId={hide.id} />
-            {session?.user.id === hide.user_id && (
-              <Link
-                href={`/hide/${hide.id}/edit`}
-                className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 rounded-md px-2.5 py-1.5 transition-colors"
-              >
-                <Pencil size={12} />
-                Edit
-              </Link>
-            )}
+            <EditButton hideId={hide.id} hideUserId={hide.user_id} />
           </div>
         </div>
 
